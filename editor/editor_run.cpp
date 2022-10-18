@@ -113,6 +113,7 @@ Error EditorRun::run(const String &p_scene, const String &p_write_movie) {
 	Rect2 screen_rect = DisplayServer::get_singleton()->screen_get_usable_rect(screen);
 
 	int window_placement = EDITOR_GET("run/window_placement/rect");
+	Vector<Vector2> instance_positions = Vector<Vector2>();
 	if (screen_rect != Rect2()) {
 		Size2 window_size;
 		window_size.x = GLOBAL_GET("display/window/size/viewport_width");
@@ -148,30 +149,23 @@ Error EditorRun::run(const String &p_scene, const String &p_write_movie) {
 
 		switch (window_placement) {
 			case 0: { // top left
-				args.push_back("--position");
-				args.push_back(itos(screen_rect.position.x) + "," + itos(screen_rect.position.y));
+				instance_positions.push_back(Vector2());
 			} break;
 			case 1: { // centered
-				Vector2 pos = (screen_rect.position) + ((screen_rect.size - window_size) / 2).floor();
-				args.push_back("--position");
-				args.push_back(itos(pos.x) + "," + itos(pos.y));
+				instance_positions.push_back(((screen_rect.size - window_size) / 2).floor());
 			} break;
 			case 2: { // custom pos
-				Vector2 pos = EDITOR_GET("run/window_placement/rect_custom_position");
-				pos += screen_rect.position;
-				args.push_back("--position");
-				args.push_back(itos(pos.x) + "," + itos(pos.y));
+				instance_positions = EDITOR_GET("run/window_placement/rect_custom_position");
+				if (instance_positions.size() <= 0) {
+					instance_positions.push_back(Vector2());
+				}
 			} break;
 			case 3: { // force maximized
-				Vector2 pos = screen_rect.position + screen_rect.size / 2;
-				args.push_back("--position");
-				args.push_back(itos(pos.x) + "," + itos(pos.y));
+				instance_positions.push_back(Vector2());
 				args.push_back("--maximized");
 			} break;
 			case 4: { // force fullscreen
-				Vector2 pos = screen_rect.position + screen_rect.size / 2;
-				args.push_back("--position");
-				args.push_back(itos(pos.x) + "," + itos(pos.y));
+				instance_positions.push_back(Vector2());
 				args.push_back("--fullscreen");
 			} break;
 		}
@@ -269,8 +263,22 @@ Error EditorRun::run(const String &p_scene, const String &p_write_movie) {
 
 	int instances = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_debug_instances", 1);
 	for (int i = 0; i < instances; i++) {
+		// Specify the position for current instance.
+		List<String> instance_args = args;
+		if (instance_positions.size() > 0) {
+			Vector2 pos = Vector2();
+			if (i < instance_positions.size()) {
+				pos = instance_positions[i];
+			} else {
+				pos = instance_positions[instance_positions.size() - 1];
+			}
+			pos += screen_rect.position;
+			instance_args.push_back("--position");
+			instance_args.push_back(itos(pos.x) + "," + itos(pos.y));
+		}
+
 		OS::ProcessID pid = 0;
-		Error err = OS::get_singleton()->create_instance(args, &pid);
+		Error err = OS::get_singleton()->create_instance(instance_args, &pid);
 		ERR_FAIL_COND_V(err, err);
 		if (pid != 0) {
 			pids.push_back(pid);
