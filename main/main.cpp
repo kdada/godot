@@ -906,8 +906,6 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		} else if (I->get() == "-m" || I->get() == "--maximized") { // force maximized window
 
 			init_maximized = true;
-			window_mode = DisplayServer::WINDOW_MODE_MAXIMIZED;
-
 		} else if (I->get() == "-w" || I->get() == "--windowed") { // force windowed window
 
 			init_windowed = true;
@@ -1405,7 +1403,6 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		main_args.push_back("--editor");
 		if (!init_windowed) {
 			init_maximized = true;
-			window_mode = DisplayServer::WINDOW_MODE_MAXIMIZED;
 		}
 	}
 
@@ -1964,6 +1961,18 @@ Error Main::setup2(Thread::ID p_main_tid_override) {
 
 		Color boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
 		DisplayServer::set_early_window_clear_color_override(true, boot_bg_color);
+
+		// Flags always take precedence over project settings.
+		if (init_windowed) {
+			window_mode = DisplayServer::WINDOW_MODE_WINDOWED;
+		} else if (init_maximized) {
+			window_mode = DisplayServer::WINDOW_MODE_MAXIMIZED;
+		} else if (init_fullscreen) {
+			window_mode = DisplayServer::WINDOW_MODE_FULLSCREEN;
+		}
+		if (init_always_on_top) {
+			window_flags |= DisplayServer::WINDOW_FLAG_ALWAYS_ON_TOP;
+		}
 
 		// rendering_driver now held in static global String in main and initialized in setup()
 		Error err;
