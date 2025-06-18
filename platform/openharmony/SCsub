@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+from misc.utility.scons_hints import *
+
+import subprocess
+import sys
+
+from methods import print_warning
+
+Import("env")
+
+openharmony_files = [Glob("*.cpp")]
+
+env_openharmony = env.Clone()
+
+openharmony_objects = []
+for x in openharmony_files:
+    openharmony_objects.append(env_openharmony.SharedObject(x))
+
+lib = env_openharmony.add_shared_library("#bin/libgodot", [openharmony_objects], SHLIBSUFFIX=env["SHLIBSUFFIX"])
+
+lib_arch_dir = ""
+if env["arch"] == "arm64":
+    lib_arch_dir = "arm64"
+elif env["arch"] == "x86_64":
+    lib_arch_dir = "x86_64"
+else:
+    print_warning("Architecture not suitable for embedding into APP; keeping .so at \\bin")
+
+if lib_arch_dir != "":
+    if env.dev_build:
+        lib_type_dir = "dev"
+    elif env.debug_features:
+        if env.editor_build and env["store_release"]:
+            lib_type_dir = "release"
+        else:
+            lib_type_dir = "debug"
+    else:  # Release
+        lib_type_dir = "release"
+
+    if env.editor_build:
+        lib_tools_dir = "tools/"
+    else:
+        lib_tools_dir = ""
