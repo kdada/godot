@@ -132,7 +132,7 @@ def configure(env: "SConsEnvironment"):
     )
 
     env.Append(CPPPATH=["#platform/openharmony"])
-    env.Append(CPPDEFINES=["UNIX_ENABLED"])
+    env.Append(CPPDEFINES=["UNIX_ENABLED", "__OPEN_HARMONY__"])
 
     if env["vulkan"]:
         env.Append(CPPDEFINES=["VULKAN_ENABLED", "RD_ENABLED"])
