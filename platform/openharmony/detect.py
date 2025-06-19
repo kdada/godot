@@ -1,3 +1,6 @@
+# Build:
+#   x86-64: scons platform=openharmony target=template_debug optimize=debug debug_symbols=true opengl3=false arch=x86_64 verbose=true
+#   arm64: scons platform=openharmony target=template_debug optimize=debug debug_symbols=true arch=arm64 opengl3=false verbose=true
 import os
 import sys
 from typing import TYPE_CHECKING
@@ -67,7 +70,7 @@ def configure(env: "SConsEnvironment"):
     env["S_compiler"] = "clang"
     env["AR"] = "llvm-ar"
     env["AS"] = "llvm-as"
-    env["LINK"] = "llvm-link"
+    env["LINK"] = "ld.lld"
     env["RANLIB"] = "llvm-ranlib" 
 
     ## Compile flags
@@ -105,12 +108,11 @@ def configure(env: "SConsEnvironment"):
         env.Append(ASFLAGS=["-arch", "x86_64"])
     elif env["arch"] == "arm64":
         env.Append(
-            CCFLAGS=(
-                "-fobjc-arc -arch arm64 -fmessage-length=0"
-                " -fdiagnostics-print-source-range-info -fdiagnostics-show-category=id -fdiagnostics-parseable-fixits"
-                " -fpascal-strings -fblocks -fvisibility=hidden -MMD -MT dependencies"
-                " -isysroot".split().append("C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot")
-            )
+            CCFLAGS=[
+                "-fobjc-arc", "--target=aarch64-linux-ohos", "-fmessage-length=0", "-fpascal-strings", "-fblocks", "-fvisibility=hidden",
+                "-MMD", "-MT dependencies", "-fdiagnostics-print-source-range-info", "-fdiagnostics-show-category=id", "-fdiagnostics-parseable-fixits",
+                "-fasm-blocks", "-isysroot='C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot'",
+            ]
         )
         env.Append(
             CPPPATH=["C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot/usr/include/aarch64-linux-ohos"]
@@ -153,7 +155,7 @@ def configure(env: "SConsEnvironment"):
 
     # 使用响应文件替换原始文件列表
     env['LINKCOM'] = '$LINK @${TARGET}.rsp'
-    env['SHLINKCOM'] = '$SHLINK @${TARGET}.rsp'
+    env['SHLINKFLAGS'] = '"--sysroot=C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot/" -shared'
 
     # 创建响应文件的 Action
     def create_rsp(target, source, env):
@@ -167,7 +169,6 @@ def configure(env: "SConsEnvironment"):
     env["SHLIBSUFFIX"] = ".so"
     # 将生成响应文件的操作添加到链接前
     env['LINKCOM'] = env.Action(create_rsp, "Generating RSP: ${TARGET}.rsp") + env['LINKCOM']
-    #env['SHLINKCOM'] = env.Action(create_rsp, "Generating RSP: $TARGET.rsp") + env['SHLINKCOM']
 
 
 
