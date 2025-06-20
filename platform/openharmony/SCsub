@@ -16,8 +16,9 @@ openharmony_objects = []
 for x in openharmony_files:
     openharmony_objects.append(env_openharmony.SharedObject(x))
 
-lib = env_openharmony.add_shared_library("#bin/libgodot", [openharmony_objects], SHLIBSUFFIX=env["SHLIBSUFFIX"])
-
+#lib = env_openharmony.add_shared_library("#bin/libgodot", [openharmony_objects], SHLIBSUFFIX=env["SHLIBSUFFIX"])
+lib = env_openharmony.add_shared_library("#platform/openharmony/template/entry/src/main/cpp/libs/libgodot", [openharmony_objects], SHLIBSUFFIX=".so")
+env.Command("#platform/openharmony/template/entry/src/main/cpp/include/bridge_openharmony.h", "#platform/openharmony/bridge_openharmony.h", Copy('$TARGET', '$SOURCE'))
 lib_arch_dir = ""
 if env["arch"] == "arm64":
     lib_arch_dir = "arm64"

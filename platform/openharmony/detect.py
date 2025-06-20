@@ -86,7 +86,7 @@ def configure(env: "SConsEnvironment"):
     if env["arch"] == "x86_64":
         env.Append(
             CCFLAGS=[
-                "-fobjc-arc", "--target=x86_64-linux-ohos",
+                "-fobjc-arc", "--target=x86_64-linux-ohos", "-fPIC",
                 "-fobjc-abi-version=2", "-fobjc-legacy-dispatch", "-fmessage-length=0", "-fpascal-strings", "-fblocks",
                 "-fasm-blocks", "-isysroot='C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot'",
             ]
@@ -102,8 +102,6 @@ def configure(env: "SConsEnvironment"):
         env.Append(LINKFLAGS=[
             "--target=x86_64-linux-ohos",
             "--sysroot=C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot/",
-            "-static-libgcc",
-            "-static-libstdc++",
         ])
         env.Append(ASFLAGS=["-arch", "x86_64"])
     elif env["arch"] == "arm64":
@@ -124,8 +122,6 @@ def configure(env: "SConsEnvironment"):
         env.Append(LINKFLAGS=[
             "--target=aarch64-linux-ohos",
             "--sysroot=C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot/",
-            "-static-libgcc",
-            "-static-libstdc++",
         ])
         env.Append(ASFLAGS=["-arch", "aarch64"])
 
@@ -155,7 +151,7 @@ def configure(env: "SConsEnvironment"):
 
     # 使用响应文件替换原始文件列表
     env['LINKCOM'] = '$LINK @${TARGET}.rsp'
-    env['SHLINKFLAGS'] = '"--sysroot=C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot/" -shared'
+    env['SHLINKFLAGS'] = '"--sysroot=C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot/" -shared -soname libgodot.so '
 
     # 创建响应文件的 Action
     def create_rsp(target, source, env):
