@@ -100,7 +100,7 @@
  * Disable assembly when MSAN is enabled, because MSAN requires
  * 100% of code to be instrumented to work.
  */
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__OPEN_HARMONY__)
 #  if defined(__linux__) || defined(__linux) || defined(__APPLE__)
 #    if ZSTD_MEMORY_SANITIZER
 #      define ZSTD_ASM_SUPPORTED 0
