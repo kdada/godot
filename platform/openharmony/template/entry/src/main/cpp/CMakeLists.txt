@@ -19,4 +19,4 @@ set_target_properties(godot
 	IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/libgodot.so
 )
 
-target_link_libraries(entry PUBLIC libace_napi.z.so godot)
+target_link_libraries(entry PUBLIC libhilog_ndk.z.so libace_ndk.z.so libnative_window.so libace_napi.z.so godot)
