@@ -12,7 +12,7 @@ OS_OpenHarmony *OS_OpenHarmony::get_singleton() {
 
 OS_OpenHarmony::OS_OpenHarmony() {
 	Vector<Logger *> loggers;
-	auto logger = memnew(Logger_OpenHarmony);
+	Logger_OpenHarmony *logger = memnew(Logger_OpenHarmony);
 	loggers.push_back(logger);
 	_set_logger(memnew(CompositeLogger(loggers)));
 }
@@ -62,8 +62,8 @@ void Logger_OpenHarmony::logv(const char *p_format, va_list p_list, bool p_err) 
 		return;
 	}
 
-	char buffer[100];
-	auto ret = vsnprintf(&buffer[0], sizeof(buffer) - 1, p_format, p_list);
+	char buffer[4096];
+	vsnprintf(&buffer[0], sizeof(buffer) - 1, p_format, p_list);
 
 	if (p_err) {
 		OH_LOG_ERROR(LOG_APP, "%{public}s", &buffer[0]);

@@ -107,8 +107,8 @@ def configure(env: "SConsEnvironment"):
     elif env["arch"] == "arm64":
         env.Append(
             CCFLAGS=[
-                "-fobjc-arc", "--target=aarch64-linux-ohos", "-fmessage-length=0", "-fpascal-strings", "-fblocks", "-fvisibility=hidden",
-                "-MMD", "-MT dependencies", "-fdiagnostics-print-source-range-info", "-fdiagnostics-show-category=id", "-fdiagnostics-parseable-fixits",
+                "-fobjc-arc", "--target=aarch64-linux-ohos", "-fPIC",
+                "-fobjc-abi-version=2", "-fobjc-legacy-dispatch", "-fmessage-length=0", "-fpascal-strings", "-fblocks",
                 "-fasm-blocks", "-isysroot='C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot'",
             ]
         )

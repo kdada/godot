@@ -16,7 +16,7 @@ add_library(entry SHARED napi_init.cpp)
 add_library(godot SHARED IMPORTED)
 set_target_properties(godot
 	PROPERTIES
-	IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/libgodot.so
+	IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/${OHOS_ARCH}/libgodot.so
 )
 
 target_link_libraries(entry PUBLIC libhilog_ndk.z.so libace_ndk.z.so libnative_window.so libace_napi.z.so godot)

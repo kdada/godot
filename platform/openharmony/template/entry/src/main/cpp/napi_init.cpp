@@ -61,7 +61,7 @@ static napi_value Init(napi_env env, napi_value exports) {
 
     // Register XComponent Callback
     callback.OnSurfaceCreated = OnSurfaceCreatedCB;
-    auto ret = OH_NativeXComponent_RegisterCallback(nativeXComponent, &callback);
+    int32_t ret = OH_NativeXComponent_RegisterCallback(nativeXComponent, &callback);
     return exports;
 }
 EXTERN_C_END

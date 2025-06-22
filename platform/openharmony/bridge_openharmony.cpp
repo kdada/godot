@@ -11,16 +11,16 @@ int64_t godot_add(int64_t a, int64_t b) {
 }
 
 int64_t godot_init(void *nativeWindow) {
-	auto window = static_cast<OHNativeWindow *>(nativeWindow);
+	OHNativeWindow *window = static_cast<OHNativeWindow *>(nativeWindow);
 
-	auto os = memnew(OS_OpenHarmony);
+	OS_OpenHarmony *os = memnew(OS_OpenHarmony);
 	print_line("Godot init 1");
 	os->set_native_window(window);
 	print_line("Godot init 2");
-	auto proj = memnew(ProjectSettings);
+	ProjectSettings *proj = memnew(ProjectSettings);
 	print_line("Godot init 3");
 	Error err = OK;
-	auto display_server = memnew(DisplayServerOpenHarmony("vulkan", DisplayServer::WINDOW_MODE_FULLSCREEN, DisplayServer::VSYNC_ADAPTIVE, 0, nullptr, Size2i(0, 0), 0, DisplayServer::CONTEXT_ENGINE, 0, err));
+	DisplayServerOpenHarmony *display_server = memnew(DisplayServerOpenHarmony("vulkan", DisplayServer::WINDOW_MODE_FULLSCREEN, DisplayServer::VSYNC_ADAPTIVE, 0, nullptr, Size2i(0, 0), 0, DisplayServer::CONTEXT_ENGINE, 0, err));
 	print_line("Godot init END");
 	return 0;
 }
