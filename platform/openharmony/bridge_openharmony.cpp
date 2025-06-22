@@ -2,6 +2,7 @@
 #include "core/config/project_settings.h"
 #include "core/variant/variant.h"
 #include "display_server_openharmony.h"
+#include "main/main.h"
 #include "os_openharmony.h"
 
 int64_t godot_add(int64_t a, int64_t b) {
@@ -14,13 +15,9 @@ int64_t godot_init(void *nativeWindow) {
 	OHNativeWindow *window = static_cast<OHNativeWindow *>(nativeWindow);
 
 	OS_OpenHarmony *os = memnew(OS_OpenHarmony);
-	print_line("Godot init 1");
 	os->set_native_window(window);
-	print_line("Godot init 2");
-	ProjectSettings *proj = memnew(ProjectSettings);
-	print_line("Godot init 3");
-	Error err = OK;
-	DisplayServerOpenHarmony *display_server = memnew(DisplayServerOpenHarmony("vulkan", DisplayServer::WINDOW_MODE_FULLSCREEN, DisplayServer::VSYNC_ADAPTIVE, 0, nullptr, Size2i(0, 0), 0, DisplayServer::CONTEXT_ENGINE, 0, err));
-	print_line("Godot init END");
+	print_line("Godot Setup:", os->get_executable_path());
+	Error err = Main::setup("template", 0, nullptr, true);
+	print_line(vformat("Godot Setup Result: %d", err));
 	return 0;
 }

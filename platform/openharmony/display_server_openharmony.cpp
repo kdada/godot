@@ -8,6 +8,26 @@ DisplayServerOpenHarmony *DisplayServerOpenHarmony::get_singleton() {
 	return static_cast<DisplayServerOpenHarmony *>(DisplayServer::get_singleton());
 }
 
+Vector<String> DisplayServerOpenHarmony::get_rendering_drivers_func() {
+	Vector<String> drivers;
+	drivers.push_back("vulkan");
+	return drivers;
+}
+
+DisplayServer *DisplayServerOpenHarmony::create_func(const String &p_rendering_driver, DisplayServer::WindowMode p_mode, DisplayServer::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, int64_t p_parent_window, Error &r_error) {
+	DisplayServer *ds = memnew(DisplayServerOpenHarmony(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
+	if (r_error != OK) {
+		OS::get_singleton()->alert(
+				"Your device seems not to support the required Vulkan version.\n\n"
+				"Unable to initialize Vulkan video driver");
+	}
+	return ds;
+}
+
+void DisplayServerOpenHarmony::register_openharmony_driver() {
+	register_create_function("openharmony", create_func, get_rendering_drivers_func);
+}
+
 DisplayServerOpenHarmony::DisplayServerOpenHarmony(const String &p_rendering_driver, WindowMode p_mode, DisplayServer::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, int64_t p_parent_window, Error &r_error) {
 	print_line("DisplayServerOpenHarmony 0");
 	rendering_driver = p_rendering_driver;

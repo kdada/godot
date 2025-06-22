@@ -27,6 +27,11 @@ public:
 	virtual void delete_main_loop() override;
 	virtual void finalize() override;
 	virtual bool _check_internal_feature_support(const String &p_feature) override;
+
+	virtual String get_user_data_dir(const String &p_user_dir) const override;
+	virtual String get_resource_dir() const override;
+	virtual String get_bundle_resource_dir() const override;
+	virtual String get_executable_path() const override;
 };
 
 class Logger_OpenHarmony : public Logger {

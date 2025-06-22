@@ -1,3 +1,4 @@
+#include "display_server_openharmony.h"
 #include "os_openharmony.h"
 #include <hilog/log.h>
 
@@ -15,6 +16,8 @@ OS_OpenHarmony::OS_OpenHarmony() {
 	Logger_OpenHarmony *logger = memnew(Logger_OpenHarmony);
 	loggers.push_back(logger);
 	_set_logger(memnew(CompositeLogger(loggers)));
+
+	DisplayServerOpenHarmony::register_openharmony_driver();
 }
 
 void OS_OpenHarmony::set_native_window(OHNativeWindow *p_native_window) {
@@ -34,6 +37,7 @@ Size2i OS_OpenHarmony::get_display_size() const {
 }
 
 void OS_OpenHarmony::initialize() {
+	OS_Unix::initialize_core();
 }
 
 void OS_OpenHarmony::initialize_joypads() {
@@ -55,6 +59,22 @@ void OS_OpenHarmony::finalize() {
 
 bool OS_OpenHarmony::_check_internal_feature_support(const String &p_feature) {
 	return false;
+}
+
+String OS_OpenHarmony::get_user_data_dir(const String &p_user_dir) const {
+	return "/data/storage/el2/base/files/" + p_user_dir;
+}
+
+String OS_OpenHarmony::get_resource_dir() const {
+	return "/data/storage/el1/bundle/";
+}
+
+String OS_OpenHarmony::get_bundle_resource_dir() const {
+	return "/data/storage/el1/bundle/";
+}
+
+String OS_OpenHarmony::get_executable_path() const {
+	return "template";
 }
 
 void Logger_OpenHarmony::logv(const char *p_format, va_list p_list, bool p_err) {
