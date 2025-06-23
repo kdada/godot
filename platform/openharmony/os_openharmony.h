@@ -11,6 +11,10 @@ class OS_OpenHarmony : public OS_Unix {
 	MainLoop *main_loop = nullptr;
 
 public:
+	static const char *EXEC_PATH;
+	static const char *BUNDLE_RESOURCE_DIR;
+	static const char *USER_DATA_DIR;
+
 	static OS_OpenHarmony *get_singleton();
 
 	OS_OpenHarmony();
@@ -29,7 +33,6 @@ public:
 	virtual bool _check_internal_feature_support(const String &p_feature) override;
 
 	virtual String get_user_data_dir(const String &p_user_dir) const override;
-	virtual String get_resource_dir() const override;
 	virtual String get_bundle_resource_dir() const override;
 	virtual String get_executable_path() const override;
 };

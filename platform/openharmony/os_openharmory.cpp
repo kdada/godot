@@ -1,11 +1,23 @@
+#include "dir_access_openharmony.h"
 #include "display_server_openharmony.h"
+#include "file_access_openharmony.h"
 #include "os_openharmony.h"
+
+#include "core/io/dir_access.h"
+#include "core/io/file_access.h"
+#include "drivers/unix/dir_access_unix.h"
+#include "drivers/unix/file_access_unix.h"
+
 #include <hilog/log.h>
 
 #undef LOG_DOMAIN
 #undef LOG_TAG
 #define LOG_DOMAIN 0x3200
 #define LOG_TAG "LIB_GODOT"
+
+const char *OS_OpenHarmony::EXEC_PATH = "template";
+const char *OS_OpenHarmony::BUNDLE_RESOURCE_DIR = "/data/storage/el1/bundle/resources/rawfile/";
+const char *OS_OpenHarmony::USER_DATA_DIR = "/data/storage/el2/base/files/";
 
 OS_OpenHarmony *OS_OpenHarmony::get_singleton() {
 	return static_cast<OS_OpenHarmony *>(OS::get_singleton());
@@ -38,6 +50,9 @@ Size2i OS_OpenHarmony::get_display_size() const {
 
 void OS_OpenHarmony::initialize() {
 	OS_Unix::initialize_core();
+
+	FileAccess::make_default<FileAccessOpenHarmony>(FileAccess::ACCESS_FILESYSTEM);
+	DirAccess::make_default<DirAccessOpenHarmony>(DirAccess::ACCESS_FILESYSTEM);
 }
 
 void OS_OpenHarmony::initialize_joypads() {
@@ -62,19 +77,15 @@ bool OS_OpenHarmony::_check_internal_feature_support(const String &p_feature) {
 }
 
 String OS_OpenHarmony::get_user_data_dir(const String &p_user_dir) const {
-	return "/data/storage/el2/base/files/" + p_user_dir;
-}
-
-String OS_OpenHarmony::get_resource_dir() const {
-	return "/data/storage/el1/bundle/";
+	return OS_OpenHarmony::USER_DATA_DIR;
 }
 
 String OS_OpenHarmony::get_bundle_resource_dir() const {
-	return "/data/storage/el1/bundle/";
+	return OS_OpenHarmony::BUNDLE_RESOURCE_DIR;
 }
 
 String OS_OpenHarmony::get_executable_path() const {
-	return "template";
+	return OS_OpenHarmony::EXEC_PATH;
 }
 
 void Logger_OpenHarmony::logv(const char *p_format, va_list p_list, bool p_err) {
