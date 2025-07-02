@@ -7,6 +7,8 @@
 #include "core/io/file_access.h"
 #include "drivers/unix/dir_access_unix.h"
 #include "drivers/unix/file_access_unix.h"
+#include "main/main.h"
+#include "scene/main/scene_tree.h"
 
 #include <hilog/log.h>
 
@@ -86,6 +88,30 @@ String OS_OpenHarmony::get_bundle_resource_dir() const {
 
 String OS_OpenHarmony::get_executable_path() const {
 	return OS_OpenHarmony::EXEC_PATH;
+}
+
+void OS_OpenHarmony::main_loop_begin() {
+	if (main_loop) {
+		main_loop->initialize();
+	}
+}
+
+bool OS_OpenHarmony::main_loop_iterate() {
+	if (!main_loop) {
+		return false;
+	}
+	DisplayServerOpenHarmony::get_singleton()->process_events();
+	return Main::iteration();
+}
+
+void OS_OpenHarmony::main_loop_end() {
+	if (main_loop) {
+		SceneTree *scene_tree = Object::cast_to<SceneTree>(main_loop);
+		if (scene_tree) {
+			scene_tree->quit();
+		}
+		main_loop->finalize();
+	}
 }
 
 void Logger_OpenHarmony::logv(const char *p_format, va_list p_list, bool p_err) {

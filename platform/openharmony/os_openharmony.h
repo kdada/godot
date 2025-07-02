@@ -35,6 +35,10 @@ public:
 	virtual String get_user_data_dir(const String &p_user_dir) const override;
 	virtual String get_bundle_resource_dir() const override;
 	virtual String get_executable_path() const override;
+
+	void main_loop_begin();
+	bool main_loop_iterate();
+	void main_loop_end();
 };
 
 class Logger_OpenHarmony : public Logger {

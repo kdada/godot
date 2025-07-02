@@ -30,30 +30,25 @@ void DisplayServerOpenHarmony::register_openharmony_driver() {
 }
 
 DisplayServerOpenHarmony::DisplayServerOpenHarmony(const String &p_rendering_driver, WindowMode p_mode, DisplayServer::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, int64_t p_parent_window, Error &r_error) {
-	print_line("DisplayServerOpenHarmony 0");
 	rendering_driver = p_rendering_driver;
 
 	rendering_context = nullptr;
 	rendering_device = nullptr;
 
-	print_line("DisplayServerOpenHarmony 1");
 	if (rendering_driver != "vulkan") {
 		ERR_PRINT(vformat("Failed to create %s context", rendering_driver));
 		r_error = ERR_UNAVAILABLE;
 	}
-	print_line("DisplayServerOpenHarmony 2");
 
 	rendering_context = memnew(RenderingContextDriverVulkanOpenHarmony);
 
 	if (rendering_context->initialize() != OK) {
-		print_line("DisplayServerOpenHarmony 2.1");
 		memdelete(rendering_context);
 		rendering_context = nullptr;
 		ERR_PRINT(vformat("Failed to initialize %s context", rendering_driver));
 		r_error = ERR_UNAVAILABLE;
 		return;
 	}
-	print_line("DisplayServerOpenHarmony 3");
 	RenderingContextDriverVulkanOpenHarmony::WindowPlatformData vulkan;
 	OHNativeWindow *native_window = OS_OpenHarmony::get_singleton()->get_native_window();
 	ERR_FAIL_NULL(native_window);
@@ -221,6 +216,14 @@ void DisplayServerOpenHarmony::window_set_mode(DisplayServer::WindowMode p_mode,
 
 DisplayServer::WindowMode DisplayServerOpenHarmony::window_get_mode(DisplayServer::WindowID p_window) const {
 	return WINDOW_MODE_FULLSCREEN;
+}
+
+void DisplayServerOpenHarmony::window_set_vsync_mode(VSyncMode p_vsync_mode, WindowID p_window) {
+	// Not supported on OpenHarmony.
+}
+
+DisplayServer::VSyncMode DisplayServerOpenHarmony::window_get_vsync_mode(WindowID p_window) const {
+	return VSyncMode::VSYNC_ADAPTIVE;
 }
 
 bool DisplayServerOpenHarmony::window_is_maximize_allowed(DisplayServer::WindowID p_window) const {
