@@ -1,6 +1,5 @@
 import plugin from 'libentry.so';
 import { resourceManager } from '@kit.LocalizationKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
 import { display } from '@kit.ArkUI';
 
 class PluginXComponentController extends XComponentController {
@@ -51,6 +50,19 @@ struct Index {
             this.controller.setXComponentSurfaceRect(surfaceRect);
             plugin.setup()
           })
+        })
+        .onTouch((event) => {
+          let events: plugin.SimplifiedTouchEvent[] = [];
+          for (let index = 0; index < event.touches.length; index++) {
+            const touch = event.touches[index];
+            events.push({
+              type: touch.type,
+              id: touch.id,
+              x: touch.x,
+              y: touch.y,
+            })
+          }
+          plugin.input(events);
         })
         .width('100%')
         .height('100%')

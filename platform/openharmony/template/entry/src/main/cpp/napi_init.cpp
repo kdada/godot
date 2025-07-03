@@ -4,6 +4,7 @@
 #include <napi/native_api.h>
 #include <native_window/external_window.h>
 #include <rawfile/raw_file_manager.h>
+#include <vector>
 
 #undef LOG_DOMAIN
 #undef LOG_TAG
@@ -14,6 +15,7 @@ static NativeResourceManager *resourceManager = nullptr;
 static OHNativeWindow *nativeWindow = nullptr;
 static int64_t windowWidth = 0;
 static int64_t windowHeight = 0;
+static bool initialized = false;
 
 static napi_value NAPI_Global_setResourceManager(napi_env env, napi_callback_info info) {
     size_t argc = 1;
@@ -88,6 +90,91 @@ static napi_value NAPI_Global_destroySurface(napi_env env, napi_callback_info in
 
 static napi_value NAPI_Global_setup(napi_env env, napi_callback_info info) {
     godot_init(resourceManager, nativeWindow, windowWidth, windowHeight);
+    initialized = true;
+    return nullptr;
+}
+
+static napi_value NAPI_Global_input(napi_env env, napi_callback_info info) {
+    if (!initialized) {
+        return nullptr;
+    }
+    size_t argc = 1;
+    napi_value args[1] = {nullptr};
+    if (napi_ok != napi_get_cb_info(env, info, &argc, args, nullptr, nullptr)) {
+        OH_LOG_ERROR(LOG_APP, "GetContext napi_get_cb_info failed");
+        return nullptr;
+    }
+    uint32_t array_length = 0;
+    if (napi_ok != napi_get_array_length(env, args[0], &array_length)) {
+        OH_LOG_ERROR(LOG_APP, "Get array length failed");
+        return nullptr;
+    }
+
+    std::vector<GodotTouchEvent> events;
+
+    for (int i = 0; i < array_length; i++) {
+        napi_value element;
+        if (napi_ok != napi_get_element(env, args[0], i, &element)) {
+            OH_LOG_ERROR(LOG_APP, "Get array element failed");
+            return nullptr;
+        }
+
+        napi_value event_type;
+        if (napi_ok != napi_get_named_property(env, element, "type", &event_type)) {
+            OH_LOG_ERROR(LOG_APP, "Get event type failed");
+            return nullptr;
+        }
+
+        int32_t event_type_int;
+        if (napi_ok != napi_get_value_int32(env, event_type, &event_type_int)) {
+            OH_LOG_ERROR(LOG_APP, "Get event type int failed");
+            return nullptr;
+        }
+
+        napi_value event_id;
+        if (napi_ok != napi_get_named_property(env, element, "id", &event_id)) {
+            OH_LOG_ERROR(LOG_APP, "Get event id failed");
+            return nullptr;
+        }
+
+        int32_t event_id_int;
+        if (napi_ok != napi_get_value_int32(env, event_id, &event_id_int)) {
+            OH_LOG_ERROR(LOG_APP, "Get event id int failed");
+            return nullptr;
+        }
+
+        napi_value event_x;
+        if (napi_ok != napi_get_named_property(env, element, "x", &event_x)) {
+            OH_LOG_ERROR(LOG_APP, "Get event x failed");
+            return nullptr;
+        }
+
+        double event_x_double;
+        if (napi_ok != napi_get_value_double(env, event_x, &event_x_double)) {
+            OH_LOG_ERROR(LOG_APP, "Get event x double failed");
+            return nullptr;
+        }
+
+        napi_value event_y;
+        if (napi_ok != napi_get_named_property(env, element, "y", &event_y)) {
+            OH_LOG_ERROR(LOG_APP, "Get event y failed");
+            return nullptr;
+        }
+
+        double event_y_double;
+        if (napi_ok != napi_get_value_double(env, event_y, &event_y_double)) {
+            OH_LOG_ERROR(LOG_APP, "Get event y double failed");
+            return nullptr;
+        }
+        
+        GodotTouchEvent event;
+        event.type = event_type_int;
+        event.id = event_id_int;
+        event.x = event_x_double;
+        event.y = event_y_double;
+        events.push_back(event);
+    }
+    godot_touch(&events[0], events.size());
     return nullptr;
 }
 
@@ -99,7 +186,8 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"setSurfaceId", nullptr, NAPI_Global_setSurfaceId, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"changeSurface", nullptr, NAPI_Global_changeSurface, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"destroySurface", nullptr, NAPI_Global_destroySurface, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"setup", nullptr, NAPI_Global_setup, nullptr, nullptr, nullptr, napi_default, nullptr}};
+        {"setup", nullptr, NAPI_Global_setup, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"input", nullptr, NAPI_Global_input, nullptr, nullptr, nullptr, napi_default, nullptr}};
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
 }

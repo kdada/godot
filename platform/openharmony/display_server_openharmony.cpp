@@ -259,4 +259,5 @@ bool DisplayServerOpenHarmony::can_any_window_draw() const {
 }
 
 void DisplayServerOpenHarmony::process_events() {
+	Input::get_singleton()->flush_buffered_events();
 }
