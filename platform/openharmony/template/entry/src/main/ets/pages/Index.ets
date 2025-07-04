@@ -38,7 +38,7 @@ struct Index {
         controller: this.controller,
       })
         .onLoad(() => {
-          display.getAllDisplays((err, data) => {
+          display.getAllDisplays((err, data: Array<display.Display>) => {
             let screenWidth: number = data[0].width
             let screenHeight: number = data[0].height
             let surfaceRect: SurfaceRect = {
@@ -53,13 +53,14 @@ struct Index {
         })
         .onTouch((event) => {
           let events: plugin.SimplifiedTouchEvent[] = [];
+          let ctx = this.getUIContext()
           for (let index = 0; index < event.touches.length; index++) {
             const touch = event.touches[index];
             events.push({
               type: touch.type,
               id: touch.id,
-              x: touch.x,
-              y: touch.y,
+              x: ctx.vp2px(touch.x),
+              y: ctx.vp2px(touch.y),
             })
           }
           plugin.input(events);

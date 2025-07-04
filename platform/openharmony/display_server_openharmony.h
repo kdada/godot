@@ -11,6 +11,11 @@ class DisplayServerOpenHarmony : public DisplayServer {
 	RenderingDevice *rendering_device = nullptr;
 	ObjectID window_attached_instance_id;
 
+	Callable input_event_callback;
+
+	void _window_callback(const Callable &p_callable, const Variant &p_arg, bool p_deferred = false) const;
+	static void _dispatch_input_events(const Ref<InputEvent> &p_event);
+
 public:
 	static DisplayServerOpenHarmony *get_singleton();
 	static DisplayServer *create_func(const String &p_rendering_driver, WindowMode p_mode, DisplayServer::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, int64_t p_parent_window, Error &r_error);
@@ -19,6 +24,8 @@ public:
 
 	DisplayServerOpenHarmony(const String &p_rendering_driver, WindowMode p_mode, DisplayServer::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, int64_t p_parent_window, Error &r_error);
 	~DisplayServerOpenHarmony();
+
+	void send_input_event(const Ref<InputEvent> &p_event) const;
 
 	virtual bool has_feature(Feature p_feature) const override;
 	virtual String get_name() const override;

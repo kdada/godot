@@ -5,6 +5,10 @@
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/rendering_device.h"
 
+void DisplayServerOpenHarmony::_dispatch_input_events(const Ref<InputEvent> &p_event) {
+	DisplayServerOpenHarmony::get_singleton()->send_input_event(p_event);
+}
+
 DisplayServerOpenHarmony *DisplayServerOpenHarmony::get_singleton() {
 	return static_cast<DisplayServerOpenHarmony *>(DisplayServer::get_singleton());
 }
@@ -78,10 +82,26 @@ DisplayServerOpenHarmony::DisplayServerOpenHarmony(const String &p_rendering_dri
 
 	RendererCompositorRD::make_current();
 
+	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_events);
+
 	r_error = OK;
 }
 
 DisplayServerOpenHarmony::~DisplayServerOpenHarmony() {
+}
+
+void DisplayServerOpenHarmony::_window_callback(const Callable &p_callable, const Variant &p_arg, bool p_deferred) const {
+	if (p_callable.is_valid()) {
+		if (p_deferred) {
+			p_callable.call_deferred(p_arg);
+		} else {
+			p_callable.call(p_arg);
+		}
+	}
+}
+
+void DisplayServerOpenHarmony::send_input_event(const Ref<InputEvent> &p_event) const {
+	_window_callback(input_event_callback, p_event);
 }
 
 bool DisplayServerOpenHarmony::has_feature(Feature p_feature) const {
@@ -143,6 +163,7 @@ void DisplayServerOpenHarmony::window_set_window_event_callback(const Callable &
 }
 
 void DisplayServerOpenHarmony::window_set_input_event_callback(const Callable &p_callable, DisplayServer::WindowID p_window) {
+	input_event_callback = p_callable;
 }
 
 void DisplayServerOpenHarmony::window_set_input_text_callback(const Callable &p_callable, DisplayServer::WindowID p_window) {
