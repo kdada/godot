@@ -1,5 +1,7 @@
 #pragma once
 
+#include "audio_driver_openharmony.h"
+
 #include "core/os/main_loop.h"
 #include "drivers/unix/os_unix.h"
 #include "drivers/vulkan/godot_vulkan.h"
@@ -9,6 +11,7 @@ class OS_OpenHarmony : public OS_Unix {
 	Size2i display_size;
 	OHNativeWindow *native_window = nullptr;
 	MainLoop *main_loop = nullptr;
+	AudioDriverOpenHarmony audio_driver_openharmony;
 
 public:
 	static const char *EXEC_PATH;

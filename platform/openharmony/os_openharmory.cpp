@@ -31,6 +31,7 @@ OS_OpenHarmony::OS_OpenHarmony() {
 	loggers.push_back(logger);
 	_set_logger(memnew(CompositeLogger(loggers)));
 
+	AudioDriverManager::add_driver(&audio_driver_openharmony);
 	DisplayServerOpenHarmony::register_openharmony_driver();
 }
 
