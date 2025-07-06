@@ -11,6 +11,10 @@
     {
       "name": "EntryAbility_label",
       "value": "label"
+    },
+    {
+      "name": "INTERNET_reason",
+      "value": "For accessing network"
     }
   ]
 }
