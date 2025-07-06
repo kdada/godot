@@ -11,6 +11,7 @@ enum WrapperScreenOrientation {
 };
 
 int ohos_wrapper_get_display_dpi();
+float ohos_wrapper_get_display_scaled_density();
 float ohos_wrapper_get_display_refresh_rate();
 WrapperScreenOrientation ohos_wrapper_get_display_orientation();
 void ohos_wrapper_screen_set_keep_on(int32_t window_id, bool p_enable);

@@ -146,6 +146,10 @@ int DisplayServerOpenHarmony::screen_get_dpi(int p_screen) const {
 	return ohos_wrapper_get_display_dpi();
 }
 
+float DisplayServerOpenHarmony::screen_get_scale(int p_screen) const {
+	return ohos_wrapper_get_display_scaled_density();
+}
+
 float DisplayServerOpenHarmony::screen_get_refresh_rate(int p_screen) const {
 	return ohos_wrapper_get_display_refresh_rate();
 }

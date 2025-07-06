@@ -9,6 +9,12 @@ int ohos_wrapper_get_display_dpi() {
 	return dpi;
 }
 
+float ohos_wrapper_get_display_scaled_density() {
+	float scaled_density = 0;
+	OH_NativeDisplayManager_GetDefaultDisplayScaledDensity(&scaled_density);
+	return scaled_density;
+}
+
 float ohos_wrapper_get_display_refresh_rate() {
 	uint32_t refresh_rate = 0;
 	OH_NativeDisplayManager_GetDefaultDisplayRefreshRate(&refresh_rate);

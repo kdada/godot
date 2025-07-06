@@ -7,12 +7,31 @@
 #include "drivers/vulkan/godot_vulkan.h"
 #include "servers/audio_server.h"
 
+struct OH_Drawing_FontDescriptor;
+
 class OS_OpenHarmony : public OS_Unix {
 	Size2i display_size;
 	OHNativeWindow *native_window = nullptr;
 	MainLoop *main_loop = nullptr;
 	AudioDriverOpenHarmony audio_driver_openharmony;
 	int32_t window_id = -1;
+	struct FontInfo {
+		String font_name;
+		HashSet<String> lang;
+		HashSet<String> script;
+		int weight = 400;
+		int stretch = 100;
+		bool italic = false;
+		int priority = 0;
+		String path;
+		OH_Drawing_FontDescriptor *descriptor;
+	};
+	mutable bool font_config_loaded = false;
+	mutable HashMap<String, String> font_aliases;
+	mutable List<FontInfo> fonts;
+	mutable HashSet<String> font_names;
+
+	void _load_system_font_config() const;
 
 public:
 	static const char *EXEC_PATH;
@@ -43,6 +62,10 @@ public:
 	virtual String get_user_data_dir(const String &p_user_dir) const override;
 	virtual String get_bundle_resource_dir() const override;
 	virtual String get_executable_path() const override;
+
+	virtual Vector<String> get_system_fonts() const override;
+	virtual String get_system_font_path(const String &p_font_name, int p_weight = 400, int p_stretch = 100, bool p_italic = false) const override;
+	virtual Vector<String> get_system_font_path_for_text(const String &p_font_name, const String &p_text, const String &p_locale = String(), const String &p_script = String(), int p_weight = 400, int p_stretch = 100, bool p_italic = false) const override;
 
 	void main_loop_begin();
 	bool main_loop_iterate();
