@@ -43,6 +43,14 @@ OHNativeWindow *OS_OpenHarmony::get_native_window() const {
 	return native_window;
 }
 
+void OS_OpenHarmony::set_window_id(int32_t p_window_id) {
+	window_id = p_window_id;
+}
+
+int32_t OS_OpenHarmony::get_window_id() const {
+	return window_id;
+}
+
 void OS_OpenHarmony::set_display_size(const Size2i &p_size) {
 	display_size = p_size;
 }

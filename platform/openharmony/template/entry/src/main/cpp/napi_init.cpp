@@ -13,6 +13,7 @@
 
 static NativeResourceManager *resourceManager = nullptr;
 static OHNativeWindow *nativeWindow = nullptr;
+static int32_t windowId = -1;
 static int64_t windowWidth = 0;
 static int64_t windowHeight = 0;
 static bool initialized = false;
@@ -25,6 +26,24 @@ static napi_value NAPI_Global_setResourceManager(napi_env env, napi_callback_inf
         return nullptr;
     }
     resourceManager = OH_ResourceManager_InitNativeResourceManager(env, args[0]);
+    return nullptr;
+}
+
+static napi_value NAPI_Global_setWindowId(napi_env env, napi_callback_info info) {
+    if (windowId != -1) {
+        OH_LOG_ERROR(LOG_APP, "Window id already exists");
+        return nullptr;
+    }
+    size_t argc = 1;
+    napi_value args[1] = {nullptr};
+    if (napi_ok != napi_get_cb_info(env, info, &argc, args, nullptr, nullptr)) {
+        OH_LOG_ERROR(LOG_APP, "GetContext napi_get_cb_info failed");
+        return nullptr;
+    }
+    if (napi_ok != napi_get_value_int32(env, args[0], &windowId)) {
+        OH_LOG_ERROR(LOG_APP, "Get window id failed");
+        return nullptr;
+    }
     return nullptr;
 }
 
@@ -89,7 +108,7 @@ static napi_value NAPI_Global_destroySurface(napi_env env, napi_callback_info in
 }
 
 static napi_value NAPI_Global_setup(napi_env env, napi_callback_info info) {
-    godot_init(resourceManager, nativeWindow, windowWidth, windowHeight);
+    godot_init(resourceManager, nativeWindow, windowId, windowWidth, windowHeight);
     initialized = true;
     return nullptr;
 }
@@ -166,7 +185,7 @@ static napi_value NAPI_Global_input(napi_env env, napi_callback_info info) {
             OH_LOG_ERROR(LOG_APP, "Get event y double failed");
             return nullptr;
         }
-        
+
         GodotTouchEvent event;
         event.type = event_type_int;
         event.id = event_id_int;
@@ -187,7 +206,8 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"changeSurface", nullptr, NAPI_Global_changeSurface, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"destroySurface", nullptr, NAPI_Global_destroySurface, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setup", nullptr, NAPI_Global_setup, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"input", nullptr, NAPI_Global_input, nullptr, nullptr, nullptr, napi_default, nullptr}};
+        {"input", nullptr, NAPI_Global_input, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"setWindowId", nullptr, NAPI_Global_setWindowId, nullptr, nullptr, nullptr, napi_default, nullptr}};
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
 }

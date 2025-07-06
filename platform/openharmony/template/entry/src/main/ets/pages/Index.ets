@@ -1,17 +1,23 @@
 import plugin from 'libentry.so';
 import { resourceManager } from '@kit.LocalizationKit';
 import { display } from '@kit.ArkUI';
+import { common, UIAbility } from '@kit.AbilityKit';
 
 class PluginXComponentController extends XComponentController {
+  ctx: common.UIAbilityContext
   resMgr: resourceManager.ResourceManager
+  windowId: number
 
-  constructor(resourceManager: resourceManager.ResourceManager) {
+  constructor(context: Context, resourceManager: resourceManager.ResourceManager) {
     super()
+    this.ctx = context as common.UIAbilityContext
     this.resMgr = resourceManager
+    this.windowId = this.ctx.windowStage.getMainWindowSync().getWindowProperties().id
   }
 
   onSurfaceCreated(surfaceId: string): void {
     plugin.setResourceManager(this.resMgr)
+    plugin.setWindowId(this.windowId)
     plugin.setSurfaceId(BigInt(surfaceId))
   }
 
@@ -28,7 +34,7 @@ class PluginXComponentController extends XComponentController {
 @Component
 struct Index {
   resMgr = this.getUIContext().getHostContext()!.resourceManager
-  controller: XComponentController = new PluginXComponentController(this.resMgr)
+  controller: XComponentController = new PluginXComponentController(getContext(this), this.resMgr)
 
   build() {
     Row() {

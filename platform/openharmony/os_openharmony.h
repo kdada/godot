@@ -12,6 +12,7 @@ class OS_OpenHarmony : public OS_Unix {
 	OHNativeWindow *native_window = nullptr;
 	MainLoop *main_loop = nullptr;
 	AudioDriverOpenHarmony audio_driver_openharmony;
+	int32_t window_id = -1;
 
 public:
 	static const char *EXEC_PATH;
@@ -24,6 +25,10 @@ public:
 
 	void set_native_window(OHNativeWindow *p_native_window);
 	OHNativeWindow *get_native_window() const;
+
+	void set_window_id(int32_t p_window_id);
+	int32_t get_window_id() const;
+
 	void set_display_size(const Size2i &p_size);
 	Size2i get_display_size() const;
 
