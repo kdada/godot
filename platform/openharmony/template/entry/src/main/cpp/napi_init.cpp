@@ -116,7 +116,7 @@ static napi_value NAPI_Global_setup(napi_env env, napi_callback_info info) {
     return nullptr;
 }
 
-static napi_value NAPI_Global_input(napi_env env, napi_callback_info info) {
+static napi_value NAPI_Global_inputTouch(napi_env env, napi_callback_info info) {
     if (!initialized) {
         return nullptr;
     }
@@ -221,6 +221,115 @@ static napi_value NAPI_Global_sendWindowEvent(napi_env env, napi_callback_info i
     return nullptr;
 }
 
+static napi_value NAPI_Global_inputKey(napi_env env, napi_callback_info info) {
+    if (!initialized) {
+        return nullptr;
+    }
+    size_t argc = 1;
+    napi_value args[1] = {nullptr};
+    if (napi_ok != napi_get_cb_info(env, info, &argc, args, nullptr, nullptr)) {
+        OH_LOG_ERROR(LOG_APP, "GetContext napi_get_cb_info failed");
+        return nullptr;
+    }
+
+    napi_value element = args[0];
+
+    napi_value code;
+    if (napi_ok != napi_get_named_property(env, element, "code", &code)) {
+        OH_LOG_ERROR(LOG_APP, "Get code failed");
+        return nullptr;
+    }
+
+    uint32_t code_uint;
+    if (napi_ok != napi_get_value_uint32(env, code, &code_uint)) {
+        OH_LOG_ERROR(LOG_APP, "Get code int failed");
+        return nullptr;
+    }
+
+    napi_value unicode;
+    if (napi_ok != napi_get_named_property(env, element, "unicode", &unicode)) {
+        OH_LOG_ERROR(LOG_APP, "Get unicode failed");
+        return nullptr;
+    }
+
+    uint32_t unicode_uint;
+    if (napi_ok != napi_get_value_uint32(env, unicode, &unicode_uint)) {
+        OH_LOG_ERROR(LOG_APP, "Get unicode int failed");
+        return nullptr;
+    }
+
+    napi_value pressed;
+    if (napi_ok != napi_get_named_property(env, element, "pressed", &pressed)) {
+        OH_LOG_ERROR(LOG_APP, "Get pressed failed");
+        return nullptr;
+    }
+
+    bool pressed_bool;
+    if (napi_ok != napi_get_value_bool(env, pressed, &pressed_bool)) {
+        OH_LOG_ERROR(LOG_APP, "Get pressed bool failed");
+        return nullptr;
+    }
+
+    napi_value alt;
+    if (napi_ok != napi_get_named_property(env, element, "alt", &alt)) {
+        OH_LOG_ERROR(LOG_APP, "Get alt failed");
+        return nullptr;
+    }
+
+    bool alt_bool;
+    if (napi_ok != napi_get_value_bool(env, alt, &alt_bool)) {
+        OH_LOG_ERROR(LOG_APP, "Get alt bool failed");
+        return nullptr;
+    }
+
+    napi_value ctrl;
+    if (napi_ok != napi_get_named_property(env, element, "ctrl", &ctrl)) {
+        OH_LOG_ERROR(LOG_APP, "Get ctrl failed");
+        return nullptr;
+    }
+
+    bool ctrl_bool;
+    if (napi_ok != napi_get_value_bool(env, ctrl, &ctrl_bool)) {
+        OH_LOG_ERROR(LOG_APP, "Get ctrl bool failed");
+        return nullptr;
+    }
+
+    napi_value shift;
+    if (napi_ok != napi_get_named_property(env, element, "shift", &shift)) {
+        OH_LOG_ERROR(LOG_APP, "Get shift failed");
+        return nullptr;
+    }
+
+    bool shift_bool;
+    if (napi_ok != napi_get_value_bool(env, shift, &shift_bool)) {
+        OH_LOG_ERROR(LOG_APP, "Get shift bool failed");
+        return nullptr;
+    }
+
+    napi_value meta;
+    if (napi_ok != napi_get_named_property(env, element, "meta", &meta)) {
+        OH_LOG_ERROR(LOG_APP, "Get meta failed");
+        return nullptr;
+    }
+
+    bool meta_bool;
+    if (napi_ok != napi_get_value_bool(env, meta, &meta_bool)) {
+        OH_LOG_ERROR(LOG_APP, "Get meta bool failed");
+        return nullptr;
+    }
+
+    GodotKeyEvent event;
+    event.code = code_uint;
+    event.unicode = unicode_uint;
+    event.pressed = pressed_bool;
+    event.alt = alt_bool;
+    event.ctrl = ctrl_bool;
+    event.shift = shift_bool;
+    event.meta = meta_bool;
+    godot_key(&event);
+    return nullptr;
+}
+
 EXTERN_C_START
 static napi_value Init(napi_env env, napi_value exports) {
     napi_property_descriptor desc[] = {
@@ -230,9 +339,10 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"changeSurface", nullptr, NAPI_Global_changeSurface, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"destroySurface", nullptr, NAPI_Global_destroySurface, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setup", nullptr, NAPI_Global_setup, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"input", nullptr, NAPI_Global_input, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"inputTouch", nullptr, NAPI_Global_inputTouch, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setWindowId", nullptr, NAPI_Global_setWindowId, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"sendWindowEvent", nullptr, NAPI_Global_sendWindowEvent, nullptr, nullptr, nullptr, napi_default, nullptr}};
+        {"sendWindowEvent", nullptr, NAPI_Global_sendWindowEvent, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"inputKey", nullptr, NAPI_Global_inputKey, nullptr, nullptr, nullptr, napi_default, nullptr}};
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
 }

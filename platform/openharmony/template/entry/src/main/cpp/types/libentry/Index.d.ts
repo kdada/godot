@@ -7,6 +7,16 @@ export class SimplifiedTouchEvent {
   public y: number
 }
 
+export class SimplifiedKeyEvent {
+  public code: number
+  public unicode: number
+  public pressed: boolean
+  public alt: boolean
+  public ctrl: boolean
+  public shift: boolean
+  public meta: boolean
+}
+
 export const setResourceManager: (resourceManager: resourceManager.ResourceManager) => any;
 
 export const setWindowId: (id: number) => any;
@@ -21,4 +31,6 @@ export const sendWindowEvent: (id: number) => any;
 
 export const setup: () => any;
 
-export const input: (events: SimplifiedTouchEvent[]) => any;
+export const inputTouch: (events: SimplifiedTouchEvent[]) => any;
+
+export const inputKey: (events: SimplifiedKeyEvent) => any;

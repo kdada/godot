@@ -1,4 +1,4 @@
-import plugin from 'libentry.so';
+import plugin, { SimplifiedKeyEvent } from 'libentry.so';
 import { resourceManager } from '@kit.LocalizationKit';
 import { display } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
@@ -71,7 +71,19 @@ struct Index {
               y: ctx.vp2px(touch.y),
             })
           }
-          plugin.input(events);
+          plugin.inputTouch(events);
+        })
+        .onKeyEvent((event) => {
+          let keyEvent: SimplifiedKeyEvent = {
+            code: event.keyCode,
+            unicode: event.unicode ? event.unicode! : 0,
+            pressed: event.type == KeyType.Down,
+            alt: event.getModifierKeyState ? event.getModifierKeyState(['alt']) : false,
+            ctrl: event.getModifierKeyState ? event.getModifierKeyState(['ctrl']) : false,
+            shift: event.getModifierKeyState ? event.getModifierKeyState(['shift']) : false,
+            meta: event.metaKey != 0,
+          };
+          plugin.inputKey(keyEvent);
         })
         .width('100%')
         .height('100%')

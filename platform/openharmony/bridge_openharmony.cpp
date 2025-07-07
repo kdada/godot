@@ -179,6 +179,24 @@ void godot_touch(GodotTouchEvent *p_event, int count) {
 	}
 }
 
+void godot_key(GodotKeyEvent *p_event) {
+	GodotKeyEvent &event = *p_event;
+	Ref<InputEventKey> ev;
+	ev.instantiate();
+	ev->set_pressed(event.pressed);
+	ev->set_echo(false);
+	ev->set_keycode(Key(event.code));
+	ev->set_physical_keycode(Key(event.code));
+	ev->set_key_label(Key(event.code));
+	ev->set_unicode(event.unicode);
+	ev->set_location(KeyLocation::UNSPECIFIED);
+	ev->set_alt_pressed(event.alt);
+	ev->set_ctrl_pressed(event.ctrl);
+	ev->set_shift_pressed(event.shift);
+	ev->set_meta_pressed(event.meta);
+	Input::get_singleton()->parse_input_event(ev);
+}
+
 void godot_resize(uint32_t width, uint32_t height) {
 	godot_step_mutex.lock();
 	latest_window_width = width;
