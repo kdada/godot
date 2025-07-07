@@ -179,6 +179,42 @@ void godot_touch(GodotTouchEvent *p_event, int count) {
 	}
 }
 
+void godot_mouse(GodotMouseEvent *p_event) {
+	static GodotMouseEvent last_mouse_event;
+	GodotMouseEvent &event = *p_event;
+	switch (event.type) {
+		case 0: { // Mouse down
+			Ref<InputEventMouseButton> ev;
+			ev.instantiate();
+			ev->set_pressed(true);
+			ev->set_position(Vector2(event.x, event.y));
+			ev->set_global_position(ev->get_position());
+			ev->set_button_index(MouseButton(event.button));
+			ev->set_button_mask(BitField<MouseButtonMask>(event.mask));
+			Input::get_singleton()->parse_input_event(ev);
+		} break;
+		case 1: { // Mouse up
+			Ref<InputEventMouseButton> ev;
+			ev.instantiate();
+			ev->set_pressed(false);
+			ev->set_position(Vector2(event.x, event.y));
+			ev->set_global_position(ev->get_position());
+			ev->set_button_index(MouseButton(event.button));
+			Input::get_singleton()->parse_input_event(ev);
+		} break;
+		case 2: { // Mouse move
+			Ref<InputEventMouseMotion> ev;
+			ev.instantiate();
+			ev->set_position(Vector2(event.x, event.y));
+			ev->set_global_position(ev->get_position());
+			ev->set_relative(Vector2(event.x - last_mouse_event.x, event.y - last_mouse_event.y));
+			ev->set_relative_screen_position(ev->get_relative());
+			Input::get_singleton()->parse_input_event(ev);
+		} break;
+	}
+	last_mouse_event = event;
+}
+
 void godot_key(GodotKeyEvent *p_event) {
 	GodotKeyEvent &event = *p_event;
 	Ref<InputEventKey> ev;

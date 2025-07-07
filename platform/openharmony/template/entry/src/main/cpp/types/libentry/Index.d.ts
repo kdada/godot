@@ -17,6 +17,14 @@ export class SimplifiedKeyEvent {
   public meta: boolean
 }
 
+export class SimplifiedMouseEvent {
+  public type: number
+  public button: number
+  public mask: number
+  public x: number
+  public y: number
+}
+
 export const setResourceManager: (resourceManager: resourceManager.ResourceManager) => any;
 
 export const setWindowId: (id: number) => any;
@@ -34,3 +42,5 @@ export const setup: () => any;
 export const inputTouch: (events: SimplifiedTouchEvent[]) => any;
 
 export const inputKey: (events: SimplifiedKeyEvent) => any;
+
+export const inputMouse: (events: SimplifiedMouseEvent) => any;

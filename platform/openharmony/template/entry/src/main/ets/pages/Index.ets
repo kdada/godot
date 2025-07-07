@@ -1,4 +1,4 @@
-import plugin, { SimplifiedKeyEvent } from 'libentry.so';
+import plugin, { SimplifiedKeyEvent, SimplifiedMouseEvent } from 'libentry.so';
 import { resourceManager } from '@kit.LocalizationKit';
 import { display } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
@@ -37,6 +37,32 @@ class PluginXComponentController extends XComponentController {
 struct Index {
   resMgr = this.getUIContext().getHostContext()!.resourceManager
   controller: XComponentController = new PluginXComponentController(getContext(this), this.resMgr)
+
+  convertMouseButton(button: MouseButton) {
+    switch (button) {
+      case MouseButton.Left:
+        return 1;
+      case MouseButton.Right:
+        return 2;
+      case MouseButton.Middle:
+        return 3;
+      case MouseButton.Forward:
+        return 8;
+      case MouseButton.Back:
+        return 9;
+    }
+    return 0;
+  }
+
+  convertMouseAction(action: MouseAction) {
+    switch (action) {
+      case MouseAction.Press:
+        return 0;
+      case MouseAction.Release:
+        return 1;
+    }
+    return 2;
+  }
 
   build() {
     Row() {
@@ -84,6 +110,50 @@ struct Index {
             meta: event.metaKey != 0,
           };
           plugin.inputKey(keyEvent);
+        })
+        .onMouse((event) => {
+          let ctx = this.getUIContext()
+          let mouseEvent: SimplifiedMouseEvent = {
+            type: this.convertMouseAction(event.action),
+            button: this.convertMouseButton(event.button),
+            mask: 0,
+            x: ctx.vp2px(event.x),
+            y: ctx.vp2px(event.y),
+          };
+          if (event.pressedButtons) {
+            for (let index = 0; index < event.pressedButtons.length; index++) {
+              mouseEvent.mask |= 1 << this.convertMouseButton(event.pressedButtons[index])
+            }
+          }
+          plugin.inputMouse(mouseEvent);
+        })
+        .onAxisEvent((event) => {
+          if (!event.scrollStep) {
+            return;
+          }
+          let ctx = this.getUIContext()
+          let value = event.getVerticalAxisValue()
+          if (value != 0) {
+            let mouseEvent: SimplifiedMouseEvent = {
+              type: this.convertMouseAction(MouseAction.Release),
+              button: value > 0 ? 5 : 4, // 5: WHEEL_DOWN, 4: WHEEL_UP
+              mask: 0,
+              x: ctx.vp2px(event.x),
+              y: ctx.vp2px(event.y),
+            };
+            plugin.inputMouse(mouseEvent);
+          }
+          value = event.getHorizontalAxisValue()
+          if (value != 0) {
+            let mouseEvent: SimplifiedMouseEvent = {
+              type: this.convertMouseAction(MouseAction.Release),
+              button: value > 0 ? 7 : 6, // 7: WHEEL_RIGHT, 4: WHEEL_LEFT
+              mask: 0,
+              x: ctx.vp2px(event.x),
+              y: ctx.vp2px(event.y),
+            };
+            plugin.inputMouse(mouseEvent);
+          }
         })
         .width('100%')
         .height('100%')

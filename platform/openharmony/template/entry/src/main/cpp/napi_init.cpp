@@ -330,6 +330,89 @@ static napi_value NAPI_Global_inputKey(napi_env env, napi_callback_info info) {
     return nullptr;
 }
 
+static napi_value NAPI_Global_inputMouse(napi_env env, napi_callback_info info) {
+    if (!initialized) {
+        return nullptr;
+    }
+    size_t argc = 1;
+    napi_value args[1] = {nullptr};
+    if (napi_ok != napi_get_cb_info(env, info, &argc, args, nullptr, nullptr)) {
+        OH_LOG_ERROR(LOG_APP, "GetContext napi_get_cb_info failed");
+        return nullptr;
+    }
+
+    napi_value element = args[0];
+
+    napi_value type;
+    if (napi_ok != napi_get_named_property(env, element, "type", &type)) {
+        OH_LOG_ERROR(LOG_APP, "Get type failed");
+        return nullptr;
+    }
+
+    uint32_t type_uint;
+    if (napi_ok != napi_get_value_uint32(env, type, &type_uint)) {
+        OH_LOG_ERROR(LOG_APP, "Get type int failed");
+        return nullptr;
+    }
+
+    napi_value button;
+    if (napi_ok != napi_get_named_property(env, element, "button", &button)) {
+        OH_LOG_ERROR(LOG_APP, "Get button failed");
+        return nullptr;
+    }
+
+    uint32_t button_uint;
+    if (napi_ok != napi_get_value_uint32(env, button, &button_uint)) {
+        OH_LOG_ERROR(LOG_APP, "Get button int failed");
+        return nullptr;
+    }
+
+    napi_value mask;
+    if (napi_ok != napi_get_named_property(env, element, "mask", &mask)) {
+        OH_LOG_ERROR(LOG_APP, "Get mask failed");
+        return nullptr;
+    }
+
+    uint32_t mask_uint;
+    if (napi_ok != napi_get_value_uint32(env, mask, &mask_uint)) {
+        OH_LOG_ERROR(LOG_APP, "Get mask int failed");
+        return nullptr;
+    }
+
+    napi_value x;
+    if (napi_ok != napi_get_named_property(env, element, "x", &x)) {
+        OH_LOG_ERROR(LOG_APP, "Get x failed");
+        return nullptr;
+    }
+
+    double x_double;
+    if (napi_ok != napi_get_value_double(env, x, &x_double)) {
+        OH_LOG_ERROR(LOG_APP, "Get x double failed");
+        return nullptr;
+    }
+
+    napi_value y;
+    if (napi_ok != napi_get_named_property(env, element, "y", &y)) {
+        OH_LOG_ERROR(LOG_APP, "Get y failed");
+        return nullptr;
+    }
+
+    double y_double;
+    if (napi_ok != napi_get_value_double(env, y, &y_double)) {
+        OH_LOG_ERROR(LOG_APP, "Get y double failed");
+        return nullptr;
+    }
+
+    GodotMouseEvent event;
+    event.type = type_uint;
+    event.button = button_uint;
+    event.mask = mask_uint;
+    event.x = x_double;
+    event.y = y_double;
+    godot_mouse(&event);
+    return nullptr;
+}
+
 EXTERN_C_START
 static napi_value Init(napi_env env, napi_value exports) {
     napi_property_descriptor desc[] = {
@@ -342,7 +425,8 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"inputTouch", nullptr, NAPI_Global_inputTouch, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setWindowId", nullptr, NAPI_Global_setWindowId, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"sendWindowEvent", nullptr, NAPI_Global_sendWindowEvent, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"inputKey", nullptr, NAPI_Global_inputKey, nullptr, nullptr, nullptr, napi_default, nullptr}};
+        {"inputKey", nullptr, NAPI_Global_inputKey, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"inputMouse", nullptr, NAPI_Global_inputMouse, nullptr, nullptr, nullptr, napi_default, nullptr}};
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
 }
