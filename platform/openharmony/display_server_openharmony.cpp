@@ -104,11 +104,27 @@ void DisplayServerOpenHarmony::send_input_event(const Ref<InputEvent> &p_event) 
 	_window_callback(input_event_callback, p_event);
 }
 
+void DisplayServerOpenHarmony::resize_window(uint32_t width, uint32_t height) {
+	Size2i size = Size2i(width, height);
+
+#if defined(RD_ENABLED)
+	if (rendering_context) {
+		rendering_context->window_set_size(MAIN_WINDOW_ID, size.x, size.y);
+	}
+#endif
+
+	Variant resize_rect = Rect2i(Point2i(), size);
+	_window_callback(window_resize_callback, resize_rect);
+}
+
+void DisplayServerOpenHarmony::send_window_event(DisplayServer::WindowEvent p_event) const {
+	_window_callback(window_event_callback, int(p_event));
+}
+
 bool DisplayServerOpenHarmony::has_feature(Feature p_feature) const {
 	switch (p_feature) {
 		case FEATURE_TOUCHSCREEN:
 		case FEATURE_VIRTUAL_KEYBOARD:
-		case FEATURE_IME:
 		case FEATURE_KEEP_SCREEN_ON:
 			return true;
 		default:
@@ -433,6 +449,7 @@ ObjectID DisplayServerOpenHarmony::window_get_attached_instance_id(DisplayServer
 }
 
 void DisplayServerOpenHarmony::window_set_window_event_callback(const Callable &p_callable, DisplayServer::WindowID p_window) {
+	window_event_callback = p_callable;
 }
 
 void DisplayServerOpenHarmony::window_set_input_event_callback(const Callable &p_callable, DisplayServer::WindowID p_window) {
@@ -440,12 +457,15 @@ void DisplayServerOpenHarmony::window_set_input_event_callback(const Callable &p
 }
 
 void DisplayServerOpenHarmony::window_set_input_text_callback(const Callable &p_callable, DisplayServer::WindowID p_window) {
+	input_text_callback = p_callable;
 }
 
 void DisplayServerOpenHarmony::window_set_rect_changed_callback(const Callable &p_callable, DisplayServer::WindowID p_window) {
+	window_resize_callback = p_callable;
 }
 
 void DisplayServerOpenHarmony::window_set_drop_files_callback(const Callable &p_callable, DisplayServer::WindowID p_window) {
+	// Not supported on OpenHarmony.
 }
 
 void DisplayServerOpenHarmony::window_set_title(const String &p_title, DisplayServer::WindowID p_window) {

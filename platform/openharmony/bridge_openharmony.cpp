@@ -12,7 +12,12 @@
 
 OS_OpenHarmony *os_openharmony = nullptr;
 OH_NativeVSync *native_vsync = nullptr;
-int step = 0;
+uint32_t step = 0;
+
+Mutex godot_step_mutex;
+uint32_t latest_window_width = 0;
+uint32_t latest_window_height = 0;
+int32_t latest_window_event = 0;
 
 enum GodotStartupStep {
 	STEP_TERMINATED = -1,
@@ -63,6 +68,38 @@ void godot_step(long long timestamp, void *data) {
 			step++;
 			break;
 		default:
+
+			godot_step_mutex.lock();
+			uint32_t current_window_width = latest_window_width;
+			uint32_t current_window_height = latest_window_height;
+			int32_t current_window_event = latest_window_event;
+			latest_window_width = 0;
+			latest_window_height = 0;
+			latest_window_event = 0;
+			godot_step_mutex.unlock();
+
+			if (current_window_width != 0 && current_window_height != 0) {
+				DisplayServerOpenHarmony::get_singleton()->resize_window(current_window_width, current_window_height);
+			}
+			if (latest_window_event != 0) {
+				switch (current_window_event) {
+					case 1: // SHOWN
+					case 2: // ACTIVE
+						OS_OpenHarmony::get_singleton()->on_focus_in();
+						break;
+					case 3: // INACTIVE
+					case 4: // HIDDEN
+						OS_OpenHarmony::get_singleton()->on_focus_out();
+						break;
+					case 5: // RESUMED
+						OS_OpenHarmony::get_singleton()->on_exit_background();
+						break;
+					case 6: // PAUSED
+						OS_OpenHarmony::get_singleton()->on_enter_background();
+						break;
+				}
+			}
+
 			if (os_openharmony->main_loop_iterate()) {
 				// If the main loop iteration returns true, it means we should exit.
 				// In this case, we do not request another frame.
@@ -140,4 +177,17 @@ void godot_touch(GodotTouchEvent *p_event, int count) {
 		}
 		last_touch_events.set(event.id, event);
 	}
+}
+
+void godot_resize(uint32_t width, uint32_t height) {
+	godot_step_mutex.lock();
+	latest_window_width = width;
+	latest_window_height = height;
+	godot_step_mutex.unlock();
+}
+
+void godot_window_event(int32_t event) {
+	godot_step_mutex.lock();
+	latest_window_event = event;
+	godot_step_mutex.unlock();
 }

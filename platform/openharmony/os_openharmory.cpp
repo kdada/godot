@@ -33,7 +33,7 @@ OS_OpenHarmony::OS_OpenHarmony() {
 	loggers.push_back(logger);
 	_set_logger(memnew(CompositeLogger(loggers)));
 
-	AudioDriverManager::add_driver(&audio_driver_openharmony);
+	AudioDriverManager::add_driver(&audio_driver);
 	DisplayServerOpenHarmony::register_openharmony_driver();
 }
 
@@ -354,6 +354,56 @@ void OS_OpenHarmony::main_loop_end() {
 			scene_tree->quit();
 		}
 		main_loop->finalize();
+	}
+}
+
+void OS_OpenHarmony::on_focus_out() {
+	if (is_focused) {
+		is_focused = false;
+
+		if (DisplayServerOpenHarmony::get_singleton()) {
+			DisplayServerOpenHarmony::get_singleton()->send_window_event(DisplayServer::WINDOW_EVENT_FOCUS_OUT);
+		}
+
+		if (OS::get_singleton()->get_main_loop()) {
+			OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
+		}
+
+		audio_driver.set_pause(true);
+	}
+}
+
+void OS_OpenHarmony::on_focus_in() {
+	if (!is_focused) {
+		is_focused = true;
+
+		if (DisplayServerOpenHarmony::get_singleton()) {
+			DisplayServerOpenHarmony::get_singleton()->send_window_event(DisplayServer::WINDOW_EVENT_FOCUS_IN);
+		}
+
+		if (OS::get_singleton()->get_main_loop()) {
+			OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
+		}
+
+		audio_driver.set_pause(false);
+	}
+}
+
+void OS_OpenHarmony::on_enter_background() {
+	if (OS::get_singleton()->get_main_loop()) {
+		OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_PAUSED);
+	}
+
+	on_focus_out();
+}
+
+void OS_OpenHarmony::on_exit_background() {
+	if (!is_focused) {
+		on_focus_in();
+
+		if (OS::get_singleton()->get_main_loop()) {
+			OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_RESUMED);
+		}
 	}
 }
 

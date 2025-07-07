@@ -14,8 +14,8 @@
 static NativeResourceManager *resourceManager = nullptr;
 static OHNativeWindow *nativeWindow = nullptr;
 static int32_t windowId = -1;
-static int64_t windowWidth = 0;
-static int64_t windowHeight = 0;
+static uint32_t windowWidth = 0;
+static uint32_t windowHeight = 0;
 static bool initialized = false;
 
 static napi_value NAPI_Global_setResourceManager(napi_env env, napi_callback_info info) {
@@ -87,13 +87,16 @@ static napi_value NAPI_Global_changeSurface(napi_env env, napi_callback_info inf
         OH_LOG_ERROR(LOG_APP, "Get surface id failed");
         return nullptr;
     }
-    if (napi_ok != napi_get_value_bigint_int64(env, args[1], &windowWidth, &lossless)) {
+    if (napi_ok != napi_get_value_uint32(env, args[1], &windowWidth)) {
         OH_LOG_ERROR(LOG_APP, "Get width failed");
         return nullptr;
     }
-    if (napi_ok != napi_get_value_bigint_int64(env, args[2], &windowHeight, &lossless)) {
+    if (napi_ok != napi_get_value_uint32(env, args[2], &windowHeight)) {
         OH_LOG_ERROR(LOG_APP, "Get height failed");
         return nullptr;
+    }
+    if (initialized) {
+        godot_resize(windowWidth, windowHeight);
     }
     return nullptr;
 }
@@ -197,6 +200,27 @@ static napi_value NAPI_Global_input(napi_env env, napi_callback_info info) {
     return nullptr;
 }
 
+static napi_value NAPI_Global_sendWindowEvent(napi_env env, napi_callback_info info) {
+    if (!initialized) {
+        return nullptr;
+    }
+
+    size_t argc = 1;
+    napi_value args[1] = {nullptr};
+
+    if (napi_ok != napi_get_cb_info(env, info, &argc, args, nullptr, nullptr)) {
+        OH_LOG_ERROR(LOG_APP, "GetContext napi_get_cb_info failed");
+        return nullptr;
+    }
+    int32_t event = 0;
+    if (napi_ok != napi_get_value_int32(env, args[0], &event)) {
+        OH_LOG_ERROR(LOG_APP, "Get event id failed");
+        return nullptr;
+    }
+    godot_window_event(event);
+    return nullptr;
+}
+
 EXTERN_C_START
 static napi_value Init(napi_env env, napi_value exports) {
     napi_property_descriptor desc[] = {
@@ -207,7 +231,8 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"destroySurface", nullptr, NAPI_Global_destroySurface, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setup", nullptr, NAPI_Global_setup, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"input", nullptr, NAPI_Global_input, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"setWindowId", nullptr, NAPI_Global_setWindowId, nullptr, nullptr, nullptr, napi_default, nullptr}};
+        {"setWindowId", nullptr, NAPI_Global_setWindowId, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"sendWindowEvent", nullptr, NAPI_Global_sendWindowEvent, nullptr, nullptr, nullptr, napi_default, nullptr}};
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
 }

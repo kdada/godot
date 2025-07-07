@@ -1,7 +1,7 @@
 import plugin from 'libentry.so';
 import { resourceManager } from '@kit.LocalizationKit';
 import { display } from '@kit.ArkUI';
-import { common, UIAbility } from '@kit.AbilityKit';
+import { common } from '@kit.AbilityKit';
 
 class PluginXComponentController extends XComponentController {
   ctx: common.UIAbilityContext
@@ -12,7 +12,9 @@ class PluginXComponentController extends XComponentController {
     super()
     this.ctx = context as common.UIAbilityContext
     this.resMgr = resourceManager
-    this.windowId = this.ctx.windowStage.getMainWindowSync().getWindowProperties().id
+    this.windowId = this.ctx.windowStage.getMainWindowSync()
+      .getWindowProperties()
+      .id
   }
 
   onSurfaceCreated(surfaceId: string): void {
@@ -22,7 +24,7 @@ class PluginXComponentController extends XComponentController {
   }
 
   onSurfaceChanged(surfaceId: string, rect: SurfaceRect): void {
-    plugin.changeSurface(BigInt(surfaceId), BigInt(rect.surfaceWidth), BigInt(rect.surfaceHeight))
+    plugin.changeSurface(BigInt(surfaceId), rect.surfaceWidth, rect.surfaceHeight)
   }
 
   onSurfaceDestroyed(surfaceId: string): void {

@@ -20,7 +20,10 @@ class DisplayServerOpenHarmony : public DisplayServer {
 	InputMethod_AttachOptions *attach_options = nullptr;
 	InputMethod_InputMethodProxy *input_method_proxy = nullptr;
 
+	Callable window_event_callback;
+	Callable window_resize_callback;
 	Callable input_event_callback;
+	Callable input_text_callback;
 
 	void _window_callback(const Callable &p_callable, const Variant &p_arg, bool p_deferred = false) const;
 	static void _dispatch_input_events(const Ref<InputEvent> &p_event);
@@ -53,6 +56,9 @@ public:
 	~DisplayServerOpenHarmony();
 
 	void send_input_event(const Ref<InputEvent> &p_event) const;
+	void resize_window(uint32_t width, uint32_t height);
+	void send_window_event(DisplayServer::WindowEvent p_event) const;
+	void change_window_status(bool shown);
 
 	virtual bool has_feature(Feature p_feature) const override;
 	virtual String get_name() const override;

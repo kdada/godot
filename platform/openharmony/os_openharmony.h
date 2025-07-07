@@ -13,8 +13,10 @@ class OS_OpenHarmony : public OS_Unix {
 	Size2i display_size;
 	OHNativeWindow *native_window = nullptr;
 	MainLoop *main_loop = nullptr;
-	AudioDriverOpenHarmony audio_driver_openharmony;
+	AudioDriverOpenHarmony audio_driver;
 	int32_t window_id = -1;
+	bool is_focused = false;
+
 	struct FontInfo {
 		String font_name;
 		HashSet<String> lang;
@@ -72,6 +74,11 @@ public:
 	void main_loop_begin();
 	bool main_loop_iterate();
 	void main_loop_end();
+
+	void on_focus_out();
+	void on_focus_in();
+	void on_enter_background();
+	void on_exit_background();
 };
 
 class Logger_OpenHarmony : public Logger {
