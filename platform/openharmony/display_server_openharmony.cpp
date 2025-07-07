@@ -109,7 +109,6 @@ bool DisplayServerOpenHarmony::has_feature(Feature p_feature) const {
 		case FEATURE_TOUCHSCREEN:
 		case FEATURE_VIRTUAL_KEYBOARD:
 		case FEATURE_IME:
-		case FEATURE_HIDPI:
 		case FEATURE_KEEP_SCREEN_ON:
 			return true;
 		default:

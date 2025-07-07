@@ -313,6 +313,26 @@ Vector<String> OS_OpenHarmony::get_system_font_path_for_text(const String &p_fon
 	return ret;
 }
 
+String OS_OpenHarmony::get_system_ca_certificates() {
+	String certfile;
+	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+
+	if (da->file_exists("/etc/ssl/certs/cacert.pem")) {
+		certfile = "/etc/ssl/certs/cacert.pem";
+	}
+
+	if (certfile.is_empty()) {
+		return "";
+	}
+
+	Ref<FileAccess> f = FileAccess::open(certfile, FileAccess::READ);
+	ERR_FAIL_COND_V_MSG(f.is_null(), "", vformat("Failed to open system CA certificates file: '%s'", certfile));
+
+	String data = f->get_as_text();
+
+	return data;
+}
+
 void OS_OpenHarmony::main_loop_begin() {
 	if (main_loop) {
 		main_loop->initialize();
