@@ -6,6 +6,10 @@
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/rendering_device.h"
 
+#include <database/pasteboard/oh_pasteboard.h>
+#include <database/udmf/udmf.h>
+#include <database/udmf/uds.h>
+
 void DisplayServerOpenHarmony::_dispatch_input_events(const Ref<InputEvent> &p_event) {
 	get_singleton()->send_input_event(p_event);
 }
@@ -124,6 +128,7 @@ void DisplayServerOpenHarmony::send_window_event(DisplayServer::WindowEvent p_ev
 bool DisplayServerOpenHarmony::has_feature(Feature p_feature) const {
 	switch (p_feature) {
 		case FEATURE_TOUCHSCREEN:
+		case FEATURE_CLIPBOARD:
 		case FEATURE_VIRTUAL_KEYBOARD:
 		case FEATURE_KEEP_SCREEN_ON:
 			return true;
@@ -194,6 +199,39 @@ DisplayServer::ScreenOrientation DisplayServerOpenHarmony::screen_get_orientatio
 		default:
 			return SCREEN_PORTRAIT;
 	}
+}
+
+void DisplayServerOpenHarmony::clipboard_set(const String &p_text) {
+	OH_Pasteboard *pasteboard = OH_Pasteboard_Create();
+	OH_UdsPlainText *plainText = OH_UdsPlainText_Create();
+	OH_UdsPlainText_SetContent(plainText, p_text.utf8().get_data());
+	OH_UdmfRecord *record = OH_UdmfRecord_Create();
+	OH_UdmfRecord_AddPlainText(record, plainText);
+	OH_UdmfData *data = OH_UdmfData_Create();
+	OH_UdmfData_AddRecord(data, record);
+	OH_Pasteboard_SetData(pasteboard, data);
+	OH_UdsPlainText_Destroy(plainText);
+	OH_UdmfRecord_Destroy(record);
+	OH_UdmfData_Destroy(data);
+	OH_Pasteboard_Destroy(pasteboard);
+}
+
+String DisplayServerOpenHarmony::clipboard_get() const {
+	const char *content = "";
+	OH_Pasteboard *pasteboard = OH_Pasteboard_Create();
+	bool hasPlainTextData = OH_Pasteboard_HasType(pasteboard, "text/plain");
+	if (hasPlainTextData) {
+		int ret = 0;
+		OH_UdmfData *udmfData = OH_Pasteboard_GetData(pasteboard, &ret);
+		OH_UdmfRecord *record = OH_UdmfData_GetRecord(udmfData, 0);
+		OH_UdsPlainText *plainText = OH_UdsPlainText_Create();
+		OH_UdmfRecord_GetPlainText(record, plainText);
+		content = OH_UdsPlainText_GetContent(plainText);
+		OH_UdsPlainText_Destroy(plainText);
+		OH_UdmfData_Destroy(udmfData);
+	}
+	OH_Pasteboard_Destroy(pasteboard);
+	return String(content);
 }
 
 void DisplayServerOpenHarmony::screen_set_keep_on(bool p_enable) {
