@@ -3,6 +3,7 @@
 #include "core/os/mutex.h"
 #include "servers/audio_server.h"
 
+#include <ohaudio/native_audiocapturer.h>
 #include <ohaudio/native_audiorenderer.h>
 #include <ohaudio/native_audiostreambuilder.h>
 
@@ -17,8 +18,18 @@ class AudioDriverOpenHarmony : public AudioDriver {
 	OH_AudioStreamBuilder *audio_stream_builder = nullptr;
 	OH_AudioRenderer *audio_renderer = nullptr;
 
+	OH_AudioStreamBuilder *audio_stream_capture_builder = nullptr;
+	OH_AudioCapturer *audio_capturer = nullptr;
+
 	OH_AudioData_Callback_Result _buffer_callback(OH_AudioRenderer *renderer, void *userData, void *audioData, int32_t audioDataSize);
 	static OH_AudioData_Callback_Result _buffer_callbacks(OH_AudioRenderer *renderer, void *userData, void *audioData, int32_t audioDataSize);
+
+	// Capturer callback functions
+	int32_t _capturer_read_data(OH_AudioCapturer *capturer, void *buffer, int32_t length);
+	static int32_t _on_capturer_read_data(OH_AudioCapturer *capturer, void *userData, void *buffer, int32_t length);
+	static int32_t _on_capturer_error(OH_AudioCapturer *capturer, void *userData, OH_AudioStream_Result error);
+	static int32_t _on_capturer_interrupt_event(OH_AudioCapturer *capturer, void *userData, OH_AudioInterrupt_ForceType type, OH_AudioInterrupt_Hint hint);
+	static int32_t _on_capturer_stream_event(OH_AudioCapturer *capturer, void *userData, OH_AudioStream_Event event);
 
 public:
 	virtual const char *get_name() const override {
@@ -33,6 +44,9 @@ public:
 	virtual void lock() override;
 	virtual void unlock() override;
 	virtual void finish() override;
+
+	virtual Error input_start() override;
+	virtual Error input_stop() override;
 
 	void set_pause(bool p_pause);
 

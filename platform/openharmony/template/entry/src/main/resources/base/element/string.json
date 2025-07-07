@@ -15,6 +15,10 @@
     {
       "name": "INTERNET_reason",
       "value": "For accessing network"
+    },
+    {
+      "name": "MICROPHONE_reason",
+      "value": "For recording audio"
     }
   ]
 }

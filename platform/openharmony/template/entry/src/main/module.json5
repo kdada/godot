@@ -23,6 +23,16 @@
           "when": "always"
         }
       },
+      {
+        "name": "ohos.permission.MICROPHONE",
+        "reason": "$string:MICROPHONE_reason",
+        "usedScene": {
+          "abilities": [
+            "FormAbility"
+          ],
+          "when": "always"
+        }
+      },
     ],
     "abilities": [
       {
