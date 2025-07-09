@@ -1,8 +1,9 @@
 import os
 import sys
 from typing import TYPE_CHECKING
+
+from methods import print_error
 from platform_methods import validate_arch
-from methods import print_error, print_warning
 
 if TYPE_CHECKING:
     from SCons.Script.SConscript import SConsEnvironment
@@ -34,7 +35,9 @@ def get_opts():
 
 
 def get_doc_classes():
-    return []
+    return [
+        "EditorExportPlatformOpenHarmony",
+    ]
 
 
 def get_doc_path():
@@ -131,7 +134,12 @@ def configure(env: "SConsEnvironment"):
         ]
     )
     env.Append(
-        CPPDEFINES=["UNIX_ENABLED", "__OPEN_HARMONY__", "MBEDTLS_NO_UDBL_DIVISION"]
+        CPPDEFINES=[
+            "OPENHARMONY_ENABLED",
+            "UNIX_ENABLED",
+            "__OPEN_HARMONY__",
+            "MBEDTLS_NO_UDBL_DIVISION",
+        ]
     )
 
     if env["vulkan"]:
@@ -145,9 +153,7 @@ def configure(env: "SConsEnvironment"):
 
     env["ARGMAX"] = 8000
     env["LINKCOM"] = "$LINK @${TARGET}.rsp"
-    env["SHLINKFLAGS"] = (
-        f'"--sysroot={sdk_root}/native/sysroot/" -shared -soname libgodot.so '
-    )
+    env["SHLINKFLAGS"] = f'"--sysroot={sdk_root}/native/sysroot/" -shared -soname libgodot.so '
 
     def create_rsp(target, source, env):
         rsp_file = str(target[0]) + ".rsp"
@@ -156,9 +162,7 @@ def configure(env: "SConsEnvironment"):
         return 0
 
     env["SHLIBSUFFIX"] = ".so"
-    env["LINKCOM"] = (
-        env.Action(create_rsp, "Generating RSP: ${TARGET}.rsp") + env["LINKCOM"]
-    )
+    env["LINKCOM"] = env.Action(create_rsp, "Generating RSP: ${TARGET}.rsp") + env["LINKCOM"]
 
     env["ARCOM"] = "$AR $ARFLAGS $TARGET @${TARGET}.rsp"
 
@@ -169,6 +173,4 @@ def configure(env: "SConsEnvironment"):
             f.write("\n".join(obj_files))
         return 0
 
-    env["ARCOM"] = (
-        env.Action(create_ar_rsp, "Generating AR RSP: ${TARGET}.rsp") + env["ARCOM"]
-    )
+    env["ARCOM"] = env.Action(create_ar_rsp, "Generating AR RSP: ${TARGET}.rsp") + env["ARCOM"]
