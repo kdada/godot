@@ -123,7 +123,42 @@ int64_t godot_init(NativeResourceManager *p_resource_manager, void *p_native_win
 	os_openharmony->set_native_window(window);
 	os_openharmony->set_display_size(Size2i(window_width, window_height));
 
-	Error err = Main::setup(OS_OpenHarmony::EXEC_PATH, 0, nullptr, false);
+	Vector<String> args;
+	String content;
+	FileAccessOpenHarmony::get_rawfile_content("_cl_", content);
+
+	if (!content.is_empty()) {
+		Vector<String> lines = content.split("\n", false);
+		for (const String &line : lines) {
+			String arg = line.strip_edges();
+			if (!arg.is_empty()) {
+				args.push_back(arg);
+			}
+		}
+	}
+
+	const char **cmdline = nullptr;
+
+	if (args.size() > 0) {
+		cmdline = (const char **)memalloc(args.size() * sizeof(const char *));
+		for (int i = 0; i < args.size(); i++) {
+			CharString cs = args[i].utf8();
+			char *flag = (char *)memalloc(cs.length() + 1);
+			memcpy((void *)flag, cs.get_data(), cs.length() + 1);
+			flag[cs.length()] = '\0';
+			cmdline[i] = flag;
+		}
+	}
+
+	Error err = Main::setup(OS_OpenHarmony::EXEC_PATH, args.size(), (char **)cmdline, false);
+
+	if (cmdline) {
+		for (int i = 0; i < args.size(); i++) {
+			memfree((void *)cmdline[i]);
+		}
+		memfree(cmdline);
+	}
+
 	if (err != OK) {
 		return err;
 	}

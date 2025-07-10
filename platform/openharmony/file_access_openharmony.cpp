@@ -5,7 +5,28 @@
 NativeResourceManager *FileAccessOpenHarmony::resource_manager = nullptr;
 
 void FileAccessOpenHarmony::setup(NativeResourceManager *p_resource_manager) {
-    FileAccessOpenHarmony::resource_manager = p_resource_manager;
+	FileAccessOpenHarmony::resource_manager = p_resource_manager;
+}
+
+Error FileAccessOpenHarmony::get_rawfile_content(const char *p_path, String &content) {
+	if (resource_manager == nullptr) {
+		return ERR_FILE_NOT_FOUND;
+	}
+	RawFile64 *rawfile = OH_ResourceManager_OpenRawFile64(resource_manager, p_path);
+	if (rawfile == nullptr) {
+		return ERR_FILE_NOT_FOUND;
+	}
+	uint64_t length = OH_ResourceManager_GetRawFileSize64(rawfile);
+	uint8_t *buffer = (uint8_t *)memalloc(length);
+	uint64_t read = OH_ResourceManager_ReadRawFile64(rawfile, buffer, length);
+	OH_ResourceManager_CloseRawFile64(rawfile);
+	if (read != length) {
+		memfree(buffer);
+		return ERR_FILE_CORRUPT;
+	}
+	content = String::utf8((const char *)buffer, length);
+	memfree(buffer);
+	return OK;
 }
 
 bool FileAccessOpenHarmony::is_in_bundle(String p_path) {

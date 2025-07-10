@@ -65,6 +65,7 @@ private:
 	SafeFlag has_runnable_preset;
 	static void _check_for_changes_poll_thread(void *ud);
 	void _update_preset_status();
+	void _remove_dir_recursive(const String &p_dir);
 
 protected:
 	void _notification(int p_what);
@@ -99,7 +100,9 @@ public:
 
 	virtual Error export_project(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, BitField<EditorExportPlatform::DebugFlags> p_flags = 0) override;
 
-	Error export_project_helper(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, bool should_sign, BitField<EditorExportPlatform::DebugFlags> p_flags);
+	Error export_project_helper(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, bool should_sign, bool export_project_only, BitField<EditorExportPlatform::DebugFlags> p_flags);
+
+	virtual Error run(const Ref<EditorExportPreset> &p_preset, int p_device, BitField<EditorExportPlatform::DebugFlags> p_debug_flags) override;
 
 	virtual void get_platform_features(List<String> *r_features) const override;
 

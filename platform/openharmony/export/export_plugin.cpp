@@ -67,6 +67,8 @@ static const char *OPENHARMONY_PERMISSIONS[] = {
 };
 
 static const char *OPENHARMONY_DEFAULT_SDK_VERSION = "5.0.5(17)";
+static const char *OPENHARMONY_DEFAULT_BUNDLE_ID = "org.godotengine.template";
+static const char *OPENHARMONY_ORIENTATION_ENUMS = "landscape,landscape_inverted,auto_rotation_landscape,auto_rotation_landscape_restricted,portrait,portrait_inverted,auto_rotation_portrait,auto_rotation_portrait_restricted,auto_rotation_unspecified,auto_rotation_restricted,follow_recent,follow_desktop";
 
 void EditorExportPlatformOpenHarmony::get_preset_features(const Ref<EditorExportPreset> &p_preset, List<String> *r_features) const {
 	r_features->push_back("etc2");
@@ -86,10 +88,13 @@ void EditorExportPlatformOpenHarmony::get_export_options(List<ExportOption> *r_o
 	r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, vformat("%s/%s", PNAME("architectures"), "x86_64")), false, true, true));
 
 	r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "build/export_project_only"), false, true, true));
+	r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "build/override_project_dir"), false, true, true));
 	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "build/sdk_version", PROPERTY_HINT_PLACEHOLDER_TEXT, vformat("%s (default)", OPENHARMONY_DEFAULT_SDK_VERSION)), "", false, true));
+	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "build/bundle_id", PROPERTY_HINT_PLACEHOLDER_TEXT, vformat("%s (default)", OPENHARMONY_DEFAULT_BUNDLE_ID)), "", false, true));
+	r_options->push_back(ExportOption(PropertyInfo(Variant::INT, "build/default_orientation", PROPERTY_HINT_ENUM, OPENHARMONY_ORIENTATION_ENUMS), 0, true, true));
+	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "build/background_image", PROPERTY_HINT_GLOBAL_FILE, "*.png"), "", false, false));
+	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "build/foreground_image", PROPERTY_HINT_GLOBAL_FILE, "*.png"), "", false, false));
 	r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "build/sign"), false, true, true));
-	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "build/background_image", PROPERTY_HINT_GLOBAL_FILE, "*.png"), ""));
-	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "build/foreground_image", PROPERTY_HINT_GLOBAL_FILE, "*.png"), ""));
 
 	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "sign/store_file", PROPERTY_HINT_GLOBAL_FILE, "*.p12", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SECRET), ""));
 	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "sign/store_password", PROPERTY_HINT_PASSWORD, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SECRET), ""));
@@ -101,7 +106,7 @@ void EditorExportPlatformOpenHarmony::get_export_options(List<ExportOption> *r_o
 
 	const char **perms = OPENHARMONY_PERMISSIONS;
 	while (*perms) {
-		r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, vformat("%s/%s", PNAME("permissions"), String(*perms).to_lower())), false));
+		r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, vformat("%s/%s", PNAME("permissions"), String(*perms))), false));
 		perms++;
 	}
 }
@@ -237,15 +242,31 @@ String EditorExportPlatformOpenHarmony::get_device_architecture(int p_index) con
 List<String> EditorExportPlatformOpenHarmony::get_binary_extensions(const Ref<EditorExportPreset> &p_preset) const {
 	List<String> list;
 	list.push_back("hap");
+	list.push_back("app");
 	return list;
 }
 
 Error EditorExportPlatformOpenHarmony::export_project(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, BitField<EditorExportPlatform::DebugFlags> p_flags) {
 	bool should_sign = p_preset->get("build/sign");
-	return export_project_helper(p_preset, p_debug, p_path, should_sign, p_flags);
+	bool export_project_only = p_preset->get("build/export_project_only");
+	return export_project_helper(p_preset, p_debug, p_path, should_sign, export_project_only, p_flags);
 }
 
-Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, bool should_sign, BitField<EditorExportPlatform::DebugFlags> p_flags) {
+Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, bool should_sign, bool export_project_only, BitField<EditorExportPlatform::DebugFlags> p_flags) {
+	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags);
+
+	EditorProgress ep("export", TTR("Exporting OpenHarmony Project"), 7, true);
+
+	bool has_sign = p_preset->get("build/sign");
+	if (should_sign && !has_sign) {
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Code Signing"), TTR("Signing is not enabled in the export preset."));
+		return ERR_CANT_CREATE;
+	}
+
+	if (ep.step(TTR("Preparing templates..."), 0)) {
+		return ERR_SKIP;
+	}
+
 	String custom_debug = p_preset->get("custom_template/debug");
 	String custom_release = p_preset->get("custom_template/release");
 	String template_path = p_debug ? custom_debug : custom_release;
@@ -266,6 +287,10 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 		return ERR_FILE_NOT_FOUND;
 	}
 
+	if (ep.step(TTR("Creating project directory..."), 1)) {
+		return ERR_SKIP;
+	}
+
 	String base_dir = p_path.get_base_dir();
 
 	if (base_dir.is_relative_path()) {
@@ -274,6 +299,7 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 	base_dir = ProjectSettings::get_singleton()->globalize_path(base_dir).simplify_path();
 	String project_name = p_path.get_file().get_basename();
 	String project_dir = base_dir.path_join(project_name);
+	String file_ext = p_path.get_extension();
 
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	if (!da->dir_exists(base_dir)) {
@@ -282,11 +308,17 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 	}
 
 	if (da->dir_exists(project_dir)) {
-		Error err = da->change_dir(project_dir);
-		if (err == OK) {
-			da->erase_contents_recursive();
-			da->change_dir("..");
-			da->remove(project_name);
+		bool override_project = p_preset->get("build/override_project_dir");
+		if (override_project) {
+			Error err = da->change_dir(project_dir);
+			if (err == OK) {
+				da->erase_contents_recursive();
+				da->change_dir("..");
+				da->remove(project_name);
+			}
+		} else {
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Project dir is already exists (Enable \"Override Project Dir\" to force override): \"%s\"."), project_dir));
+			return ERR_ALREADY_EXISTS;
 		}
 	}
 
@@ -294,6 +326,10 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 	if (err != OK) {
 		add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Could not create project directory: \"%s\""), project_dir));
 		return err;
+	}
+
+	if (ep.step(TTR("Extracting template files..."), 2)) {
+		return ERR_SKIP;
 	}
 
 	Ref<FileAccess> io_fa;
@@ -355,17 +391,11 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 	}
 	unzClose(pkg);
 
-	Vector<String> command_line_flags = gen_export_flags(p_flags);
-	String cmdline = p_preset->get("command_line/extra_args");
-	if (!cmdline.is_empty()) {
-		Vector<String> extra_args = cmdline.strip_edges().split(" ");
-		for (const String &arg : extra_args) {
-			if (!arg.strip_edges().is_empty()) {
-				command_line_flags.push_back(arg.strip_edges());
-			}
-		}
+	if (ep.step(TTR("Configuring project files..."), 3)) {
+		return ERR_SKIP;
 	}
 
+	Vector<String> command_line_flags = gen_export_flags(p_flags);
 	String cl_file_path = project_dir.path_join("entry/src/main/resources/rawfile/_cl_");
 	da->make_dir_recursive(cl_file_path.get_base_dir());
 
@@ -375,12 +405,56 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 		return ERR_FILE_CANT_WRITE;
 	}
 
-	cl_file->store_32(command_line_flags.size());
-
 	for (const String &flag : command_line_flags) {
-		CharString cs = flag.utf8();
-		cl_file->store_32(cs.length());
+		CharString cs = (flag + "\n").utf8();
 		cl_file->store_buffer((const uint8_t *)cs.get_data(), cs.length());
+	}
+	cl_file.unref();
+
+	String bundle_id = p_preset->get("build/bundle_id");
+	if (bundle_id.is_empty()) {
+		bundle_id = OPENHARMONY_DEFAULT_BUNDLE_ID;
+	}
+	String app_json_path = project_dir.path_join("AppScope/app.json5");
+	if (FileAccess::exists(app_json_path)) {
+		Ref<FileAccess> app_json_file = FileAccess::open(app_json_path, FileAccess::READ);
+		if (app_json_file.is_valid()) {
+			String content = app_json_file->get_as_text();
+			content = content.replace(OPENHARMONY_DEFAULT_BUNDLE_ID, bundle_id);
+			app_json_file = FileAccess::open(app_json_path, FileAccess::WRITE);
+			if (app_json_file.is_valid()) {
+				app_json_file->store_string(content);
+			} else {
+				add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Could not write app json: \"%s\"."), app_json_path));
+				return ERR_FILE_CANT_WRITE;
+			}
+		} else {
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Could not read app json: \"%s\"."), app_json_path));
+			return ERR_FILE_CANT_READ;
+		}
+	}
+
+	String app_name = GLOBAL_GET("application/config/name");
+	if (app_name.is_empty()) {
+		app_name = "template";
+	}
+	String string_json_path = project_dir.path_join("entry/src/main/resources/base/element/string.json5");
+	if (FileAccess::exists(string_json_path)) {
+		Ref<FileAccess> string_json_file = FileAccess::open(string_json_path, FileAccess::READ);
+		if (string_json_file.is_valid()) {
+			String content = string_json_file->get_as_text();
+			content = content.replace("label", app_name);
+			string_json_file = FileAccess::open(string_json_path, FileAccess::WRITE);
+			if (string_json_file.is_valid()) {
+				string_json_file->store_string(content);
+			} else {
+				add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Could not write string json: \"%s\"."), string_json_path));
+				return ERR_FILE_CANT_WRITE;
+			}
+		} else {
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Could not read string json: \"%s\"."), string_json_path));
+			return ERR_FILE_CANT_READ;
+		}
 	}
 
 	String sdk_version = p_preset->get("build/sdk_version");
@@ -393,6 +467,16 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 		Ref<FileAccess> build_file = FileAccess::open(build_profile_path, FileAccess::READ);
 		if (build_file.is_valid()) {
 			String content = build_file->get_as_text();
+			if (should_sign) {
+				String certpath_file = p_preset->get("sign/certpath_file");
+				String key_alias = p_preset->get("sign/key_alias");
+				String key_password = p_preset->get("sign/key_password");
+				String profile_file = p_preset->get("sign/profile_file");
+				String sign_alg = p_preset->get("sign/sign_alg");
+				String store_file = p_preset->get("sign/store_file");
+				String store_password = p_preset->get("sign/store_password");
+				content = content.replace("\"signingConfigs\": [],", String("\"signingConfigs\": [\n") + "      {\n" + "        \"name\": \"default\",\n" + "        \"type\": \"HarmonyOS\",\n" + "        \"material\": {\n" + "          \"certpath\": \"" + certpath_file + "\",\n" + "          \"keyAlias\": \"" + key_alias + "\",\n" + "          \"keyPassword\": \"" + key_password + "\",\n" + "          \"profile\": \"" + profile_file + "\",\n" + "          \"signAlg\": \"" + sign_alg + "\",\n" + "          \"storeFile\": \"" + store_file + "\",\n" + "          \"storePassword\": \"" + store_password + "\"\n" + "        }\n" + "      }\n" + "    ],");
+			}
 
 			content = content.replace("\"targetSdkVersion\": \"5.0.5(17)\"", "\"targetSdkVersion\": \"" + sdk_version + "\"");
 			content = content.replace("\"compatibleSdkVersion\": \"5.0.5(17)\"", "\"compatibleSdkVersion\": \"" + sdk_version + "\"");
@@ -419,11 +503,25 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 			add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Could not copy background image: \"%s\" to \"%s\"."), background_image, dest_bg_path));
 			return err;
 		}
+		dest_bg_path = project_dir.path_join("AppScope/resources/base/media/background.png");
+		da->make_dir_recursive(dest_bg_path.get_base_dir());
+		err = da->copy(background_image, dest_bg_path);
+		if (err != OK) {
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Could not copy background image: \"%s\" to \"%s\"."), background_image, dest_bg_path));
+			return err;
+		}
 	}
 
 	String foreground_image = p_preset->get("build/foreground_image");
 	if (!foreground_image.is_empty() && FileAccess::exists(foreground_image)) {
 		String dest_fg_path = project_dir.path_join("entry/src/main/resources/base/media/foreground.png");
+		da->make_dir_recursive(dest_fg_path.get_base_dir());
+		err = da->copy(foreground_image, dest_fg_path);
+		if (err != OK) {
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Could not copy foreground image: \"%s\" to \"%s\"."), foreground_image, dest_fg_path));
+			return err;
+		}
+		dest_fg_path = project_dir.path_join("AppScope/resources/base/media/foreground.png");
 		da->make_dir_recursive(dest_fg_path.get_base_dir());
 		err = da->copy(foreground_image, dest_fg_path);
 		if (err != OK) {
@@ -477,6 +575,56 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 		}
 	}
 
+	String module_json_path = project_dir.path_join("entry/src/main/module.json5");
+	if (FileAccess::exists(module_json_path)) {
+		Ref<FileAccess> module_json_file = FileAccess::open(module_json_path, FileAccess::READ);
+		if (module_json_file.is_valid()) {
+			String content = module_json_file->get_as_text();
+
+			String permissions_json = "  \"requestPermissions\": [\n";
+			const char **perms = OPENHARMONY_PERMISSIONS;
+			while (*perms) {
+				String perm_name = String(*perms);
+				String perm_option = vformat("%s/%s", PNAME("permissions"), perm_name);
+				bool perm_enabled = p_preset->get(perm_option);
+				if (perm_enabled) {
+					permissions_json += "    {\n";
+					permissions_json += "      \"name\": \"" + perm_name + "\",\n";
+					permissions_json += "      \"reason\": \"$string:" + perm_name.trim_prefix("ohos.permission.") + "_reason\",\n";
+					permissions_json += "      \"usedScene\": {\n";
+					permissions_json += "        \"abilities\": [\n";
+					permissions_json += "          \"FormAbility\"\n";
+					permissions_json += "        ],\n";
+					permissions_json += "        \"when\": \"always\"\n";
+					permissions_json += "      }\n";
+					permissions_json += "    },\n";
+				}
+				perms++;
+			}
+			permissions_json += "  ],\n";
+			content = content.replace("\"requestPermissions\": [],", permissions_json);
+
+			uint32_t orientation_index = p_preset->get("build/default_orientation");
+			String orientation = String(OPENHARMONY_ORIENTATION_ENUMS).split(",")[orientation_index];
+			content = content.replace("\"orientation\": \"portrait\",", "\"orientation\": \"" + orientation + "\",");
+
+			module_json_file = FileAccess::open(module_json_path, FileAccess::WRITE);
+			if (module_json_file.is_valid()) {
+				module_json_file->store_string(content);
+			} else {
+				add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Could not write module json: \"%s\"."), module_json_path));
+				return ERR_FILE_CANT_WRITE;
+			}
+		} else {
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Could not read module json: \"%s\"."), module_json_path));
+			return ERR_FILE_CANT_READ;
+		}
+	}
+
+	if (ep.step(TTR("Saving project data..."), 4)) {
+		return ERR_SKIP;
+	}
+
 	String pck_path = project_dir.path_join("/entry/src/main/resources/rawfile/template.pck");
 	err = save_pack(p_preset, p_debug, pck_path);
 	if (err != OK) {
@@ -484,10 +632,15 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 		return err;
 	}
 
-	bool export_project_only = p_preset->get("build/export_project_only");
+	print_line(vformat("Project exported pck successfully. %s", pck_path));
+
 	if (export_project_only) {
 		add_message(EXPORT_MESSAGE_INFO, TTR("Export"), TTR("Project exported successfully. Build skipped as requested."));
 		return OK;
+	}
+
+	if (ep.step(TTR("Building project..."), 5)) {
+		return ERR_SKIP;
 	}
 
 	String tool_path = EDITOR_GET("export/openharmony/openharmony_tool_path");
@@ -509,21 +662,26 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 		return ERR_FILE_NOT_FOUND;
 	}
 
+	bool is_hap = file_ext == "hap";
+
 	List<String> args;
 	args.push_back(hvigor_script);
-	args.push_back("--mode");
-	args.push_back("module");
+	args.push_back(is_hap ? "assembleHap" : "assembleApp");
 	args.push_back("-p");
-	args.push_back("module=entry@default");
+	args.push_back(String("buildMode=") + (p_debug ? "debug" : "release"));
 	args.push_back("-p");
 	args.push_back("product=default");
-	args.push_back("-p");
-	args.push_back("requiredDeviceType=phone");
-	args.push_back("assembleHap");
+	if (is_hap) {
+		args.push_back("-p");
+		args.push_back("module=entry@default");
+	}
+	args.push_back("--mode");
+	args.push_back(is_hap ? "module" : "project");
 	args.push_back("--analyze=normal");
 	args.push_back("--parallel");
 	args.push_back("--incremental");
-	args.push_back("--daemon");
+	args.push_back("--sync");
+	args.push_back("--no-daemon");
 
 	err = OS::get_singleton()->set_cwd(project_dir);
 	if (err != OK) {
@@ -535,7 +693,7 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 	String output;
 	int exit_code;
 	err = OS::get_singleton()->execute(node_exe, args, &output, &exit_code, true, nullptr, false);
-
+	OS::get_singleton()->set_cwd(EditorPaths::get_singleton()->get_project_data_dir());
 	if (err != OK) {
 		add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("Failed to execute build command: %s"), node_exe));
 		return err;
@@ -546,39 +704,193 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 		return ERR_COMPILATION_FAILED;
 	}
 
-	String hap_output_dir = project_dir.path_join("entry/build/default/outputs/default");
-	Ref<DirAccess> hap_dir = DirAccess::open(hap_output_dir);
-	if (hap_dir.is_valid()) {
-		hap_dir->list_dir_begin();
-		String file_name = hap_dir->get_next();
-		String hap_file;
+	if (ep.step(TTR("Copying output files..."), 6)) {
+		return ERR_SKIP;
+	}
+
+	String output_dir = project_dir.path_join(is_hap ? "entry/build/default/outputs/default" : "build/outputs/default");
+	Ref<DirAccess> bundle_dir = DirAccess::open(output_dir);
+	if (bundle_dir.is_valid()) {
+		bundle_dir->list_dir_begin();
+		String file_name = bundle_dir->get_next();
+		String bundle_file;
+
+		String bundle_ext = String(should_sign ? "-signed" : "-unsigned") + (is_hap ? ".hap" : ".app");
 
 		while (!file_name.is_empty()) {
-			if (file_name.ends_with(".hap")) {
-				hap_file = hap_output_dir.path_join(file_name);
+			if (file_name.ends_with(bundle_ext)) {
+				bundle_file = output_dir.path_join(file_name);
 				break;
 			}
-			file_name = hap_dir->get_next();
+			file_name = bundle_dir->get_next();
 		}
-		hap_dir->list_dir_end();
+		bundle_dir->list_dir_end();
 
-		if (!hap_file.is_empty() && FileAccess::exists(hap_file)) {
-			err = da->copy(hap_file, p_path);
+		if (!bundle_file.is_empty() && FileAccess::exists(bundle_file)) {
+			err = da->copy(bundle_file, base_dir.path_join(p_path.get_file()));
 			if (err != OK) {
-				add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("Could not copy HAP file from \"%s\" to \"%s\"."), hap_file, p_path));
+				add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("Could not copy bundle file from \"%s\" to \"%s\"."), bundle_file, p_path));
 				return err;
 			}
 			add_message(EXPORT_MESSAGE_INFO, TTR("Build"), TTR("Build completed successfully."));
 		} else {
-			add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("HAP file not found in output directory: \"%s\"."), hap_output_dir));
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("bundle file not found in output directory: \"%s\"."), output_dir));
 			return ERR_FILE_NOT_FOUND;
 		}
 	} else {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("Build output directory not found: \"%s\"."), hap_output_dir));
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("Build output directory not found: \"%s\"."), output_dir));
 		return ERR_FILE_NOT_FOUND;
 	}
 
 	return OK;
+}
+
+void EditorExportPlatformOpenHarmony::_remove_dir_recursive(const String &p_dir) {
+	Ref<DirAccess> da = DirAccess::open(p_dir);
+	if (da.is_valid()) {
+		Error err = da->erase_contents_recursive();
+		ERR_FAIL_COND_MSG(err != OK, "Could not remove directory: " + p_dir);
+		err = DirAccess::remove_absolute(p_dir);
+		ERR_FAIL_COND_MSG(err != OK, "Could not remove directory: " + p_dir);
+	}
+}
+
+Error EditorExportPlatformOpenHarmony::run(const Ref<EditorExportPreset> &p_preset, int p_device, BitField<EditorExportPlatform::DebugFlags> p_debug_flags) {
+	ERR_FAIL_INDEX_V(p_device, devices.size(), ERR_INVALID_PARAMETER);
+
+	String can_export_error;
+	bool can_export_missing_templates;
+	if (!can_export(p_preset, can_export_error, can_export_missing_templates)) {
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Run"), can_export_error);
+		return ERR_UNCONFIGURED;
+	}
+
+	MutexLock lock(device_lock);
+
+	EditorProgress ep("run", vformat(TTR("Running on %s"), devices[p_device]), 4);
+
+	String hdc = get_hdc_path();
+	if (hdc.is_empty() || !FileAccess::exists(hdc)) {
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Run"), TTR("HDC command not found."));
+		return ERR_FILE_NOT_FOUND;
+	}
+
+	// Export temporary HAP file
+	if (ep.step(TTR("Exporting HAP..."), 0)) {
+		return ERR_SKIP;
+	}
+
+	String tmp_export_path = EditorPaths::get_singleton()->get_temp_dir().path_join("tmpexport." + uitos(OS::get_singleton()->get_unix_time()) + ".hap");
+
+#define CLEANUP_AND_RETURN(m_err)                              \
+	{                                                          \
+		_remove_dir_recursive(tmp_export_path.get_basename()); \
+		DirAccess::remove_file_or_error(tmp_export_path);      \
+		return m_err;                                          \
+	}                                                          \
+	((void)0)
+
+	// Export to temporary HAP with signing forced to true
+	Error err = export_project_helper(p_preset, true, tmp_export_path, true, false, p_debug_flags);
+	if (err != OK) {
+		CLEANUP_AND_RETURN(err);
+	}
+	print_line("HAP package path: " + tmp_export_path);
+
+	List<String> args;
+	int rv;
+	String output;
+	String device_id = devices[p_device];
+
+	// Install HAP to device
+	if (ep.step(TTR("Installing to device, please wait..."), 1)) {
+		CLEANUP_AND_RETURN(ERR_SKIP);
+	}
+
+	print_line("Installing to device: " + device_id);
+
+	err = OS::get_singleton()->set_cwd(tmp_export_path.get_base_dir());
+	if (err != OK) {
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Run"), vformat(TTR("Could not change to hap directory: \"%s\"."), tmp_export_path.get_base_dir()));
+		return err;
+	}
+	args.clear();
+	args.push_back("-t");
+	args.push_back(device_id);
+	args.push_back("install");
+	args.push_back(tmp_export_path.get_file());
+
+	output.clear();
+	err = OS::get_singleton()->execute(hdc, args, &output, &rv, true);
+	OS::get_singleton()->set_cwd(EditorPaths::get_singleton()->get_project_data_dir());
+	print_verbose(output);
+	if (err || rv != 0) {
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Run"), vformat(TTR("Could not install to device: %s"), output));
+		CLEANUP_AND_RETURN(ERR_CANT_CREATE);
+	}
+
+	// Setup port forwarding for debugging
+	if (p_debug_flags.has_flag(DEBUG_FLAG_REMOTE_DEBUG)) {
+		if (ep.step(TTR("Setting up debugging..."), 2)) {
+			CLEANUP_AND_RETURN(ERR_SKIP);
+		}
+
+		int dbg_port = EDITOR_GET("network/debug/remote_port");
+
+		// remove rport with `hdc fport rm tcp:1234 tcp:1234`
+		args.clear();
+		args.push_back("fport");
+		args.push_back("rm");
+		args.push_back("tcp:" + itos(dbg_port));
+		args.push_back("tcp:" + itos(dbg_port));
+
+		output.clear();
+		OS::get_singleton()->execute(hdc, args, &output, &rv, true);
+		print_verbose(output);
+
+		args.clear();
+		args.push_back("rport");
+		args.push_back("tcp:" + itos(dbg_port));
+		args.push_back("tcp:" + itos(dbg_port));
+
+		output.clear();
+		OS::get_singleton()->execute(hdc, args, &output, &rv, true);
+		print_verbose(output);
+		print_line("Debug port forwarding: " + itos(dbg_port));
+	}
+
+	// Launch application
+	if (ep.step(TTR("Running on device..."), 3)) {
+		CLEANUP_AND_RETURN(ERR_SKIP);
+	}
+
+	args.clear();
+	args.push_back("-t");
+	args.push_back(device_id);
+	args.push_back("shell");
+	args.push_back("aa");
+	args.push_back("start");
+	args.push_back("-b");
+	String bundle_id = p_preset->get("build/bundle_id");
+	if (bundle_id.is_empty()) {
+		bundle_id = OPENHARMONY_DEFAULT_BUNDLE_ID;
+	}
+	args.push_back(bundle_id);
+	args.push_back("-a");
+	args.push_back("EntryAbility");
+
+	output.clear();
+	err = OS::get_singleton()->execute(hdc, args, &output, &rv, true);
+	print_verbose(output);
+	if (err || rv != 0) {
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Run"), vformat(TTR("Could not start application on device: %s"), output));
+		CLEANUP_AND_RETURN(ERR_CANT_CREATE);
+	}
+
+	print_line("Application started successfully on device: " + device_id);
+
+	CLEANUP_AND_RETURN(OK);
+#undef CLEANUP_AND_RETURN
 }
 
 void EditorExportPlatformOpenHarmony::get_platform_features(List<String> *r_features) const {

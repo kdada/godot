@@ -12,28 +12,7 @@
     "deliveryWithInstall": true,
     "installationFree": false,
     "pages": "$profile:main_pages",
-    "requestPermissions": [
-      {
-        "name": "ohos.permission.INTERNET",
-        "reason": "$string:INTERNET_reason",
-        "usedScene": {
-          "abilities": [
-            "FormAbility"
-          ],
-          "when": "always"
-        }
-      },
-      {
-        "name": "ohos.permission.MICROPHONE",
-        "reason": "$string:MICROPHONE_reason",
-        "usedScene": {
-          "abilities": [
-            "FormAbility"
-          ],
-          "when": "always"
-        }
-      },
-    ],
+    "requestPermissions": [],
     "abilities": [
       {
         "name": "EntryAbility",
@@ -45,7 +24,6 @@
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
         "orientation": "portrait",
-        //"orientation": "auto_rotation_landscape_restricted",
         "skills": [
           {
             "entities": [
