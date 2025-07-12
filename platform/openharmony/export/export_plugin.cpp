@@ -72,7 +72,7 @@ static const char *OPENHARMONY_USER_PERMISSIONS[] = {
 	nullptr
 };
 
-static const char *OPENHARMONY_DEFAULT_SDK_VERSION = "5.0.5(17)";
+static const char *OPENHARMONY_DEFAULT_SDK_VERSION = "5.1.0(18)";
 static const char *OPENHARMONY_DEFAULT_BUNDLE_ID = "org.godotengine.template";
 static const char *OPENHARMONY_ORIENTATION_ENUMS = "landscape,landscape_inverted,auto_rotation_landscape,auto_rotation_landscape_restricted,portrait,portrait_inverted,auto_rotation_portrait,auto_rotation_portrait_restricted,auto_rotation_unspecified,auto_rotation_restricted,follow_recent,follow_desktop";
 
@@ -517,8 +517,8 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 				content = content.replace("\"signingConfigs\": [],", String("\"signingConfigs\": [\n") + "      {\n" + "        \"name\": \"default\",\n" + "        \"type\": \"HarmonyOS\",\n" + "        \"material\": {\n" + "          \"certpath\": \"" + certpath_file + "\",\n" + "          \"keyAlias\": \"" + key_alias + "\",\n" + "          \"keyPassword\": \"" + key_password + "\",\n" + "          \"profile\": \"" + profile_file + "\",\n" + "          \"signAlg\": \"" + sign_alg + "\",\n" + "          \"storeFile\": \"" + store_file + "\",\n" + "          \"storePassword\": \"" + store_password + "\"\n" + "        }\n" + "      }\n" + "    ],");
 			}
 
-			content = content.replace("\"targetSdkVersion\": \"5.0.5(17)\"", "\"targetSdkVersion\": \"" + sdk_version + "\"");
-			content = content.replace("\"compatibleSdkVersion\": \"5.0.5(17)\"", "\"compatibleSdkVersion\": \"" + sdk_version + "\"");
+			content = content.replace("\"targetSdkVersion\": \"5.1.0(18)\"", "\"targetSdkVersion\": \"" + sdk_version + "\"");
+			content = content.replace("\"compatibleSdkVersion\": \"5.1.0(18)\"", "\"compatibleSdkVersion\": \"" + sdk_version + "\"");
 
 			build_file = FileAccess::open(build_profile_path, FileAccess::WRITE);
 			if (build_file.is_valid()) {
@@ -682,29 +682,30 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 		return ERR_SKIP;
 	}
 
-	String tool_path = EDITOR_GET("export/openharmony/openharmony_tool_path");
+	String tool_path = get_tool_path();
 	if (tool_path.is_empty()) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), TTR("OpenHarmony tool path not configured."));
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), TTR("OpenHarmony tool path not configured. Please set it in the Editor Settings (Export > OpenHarmony > OpenHarmony Tool Path)."));
 		return ERR_UNCONFIGURED;
 	}
 
-	String node_exe = tool_path.path_join("node/node.exe");
-	String hvigor_script = tool_path.path_join("hvigor/bin/hvigorw.js");
-
-	if (!FileAccess::exists(node_exe)) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("Node.js executable not found: \"%s\"."), node_exe));
+	if (!DirAccess::dir_exists_absolute(tool_path)) {
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("OpenHarmony tool path does not exist: \"%s\"."), tool_path));
 		return ERR_FILE_NOT_FOUND;
 	}
 
-	if (!FileAccess::exists(hvigor_script)) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("Hvigor script not found: \"%s\"."), hvigor_script));
-		return ERR_FILE_NOT_FOUND;
+	String hvigor_cmd = get_hvigor_path();
+	if (!FileAccess::exists(hvigor_cmd)) {
+		String hvigor_cmd_ide = get_hvigor_path_ide();
+		if (!FileAccess::exists(hvigor_cmd_ide)) {
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("Hvigor command not found: \"%s\" or \"%s\"."), hvigor_cmd, hvigor_cmd_ide));
+			return ERR_FILE_NOT_FOUND;
+		}
+		hvigor_cmd = hvigor_cmd_ide;
 	}
 
 	bool is_hap = file_ext == "hap";
 
 	List<String> args;
-	args.push_back(hvigor_script);
 	args.push_back(is_hap ? "assembleHap" : "assembleApp");
 	args.push_back("-p");
 	args.push_back(String("buildMode=") + (p_debug ? "debug" : "release"));
@@ -727,14 +728,13 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 		add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("Could not change to project directory: \"%s\"."), project_dir));
 		return err;
 	}
-	String deveco_sdk_home = EDITOR_GET("export/openharmony/deveco_sdk_home");
-	OS::get_singleton()->set_environment("DEVECO_SDK_HOME", deveco_sdk_home);
+	OS::get_singleton()->set_environment("DEVECO_SDK_HOME", get_sdk_path());
 	String output;
 	int exit_code;
-	err = OS::get_singleton()->execute(node_exe, args, &output, &exit_code, true, nullptr, false);
+	err = OS::get_singleton()->execute(hvigor_cmd, args, &output, &exit_code, true, nullptr, false);
 	OS::get_singleton()->set_cwd(EditorPaths::get_singleton()->get_project_data_dir());
 	if (err != OK) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("Failed to execute build command: %s"), node_exe));
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Build"), vformat(TTR("Failed to execute build command: %s"), hvigor_cmd));
 		return err;
 	}
 
@@ -863,7 +863,7 @@ Error EditorExportPlatformOpenHarmony::run(const Ref<EditorExportPreset> &p_pres
 	err = OS::get_singleton()->execute(hdc, args, &output, &rv, true);
 	OS::get_singleton()->set_cwd(EditorPaths::get_singleton()->get_project_data_dir());
 	print_verbose(output);
-	if (err || rv != 0) {
+	if (err || rv != 0 || output.contains("error")) {
 		add_message(EXPORT_MESSAGE_ERROR, TTR("Run"), vformat(TTR("Could not install to device: %s"), output));
 		CLEANUP_AND_RETURN(ERR_CANT_CREATE);
 	}
@@ -921,7 +921,7 @@ Error EditorExportPlatformOpenHarmony::run(const Ref<EditorExportPreset> &p_pres
 	output.clear();
 	err = OS::get_singleton()->execute(hdc, args, &output, &rv, true);
 	print_verbose(output);
-	if (err || rv != 0) {
+	if (err || rv != 0 || output.contains("error")) {
 		add_message(EXPORT_MESSAGE_ERROR, TTR("Run"), vformat(TTR("Could not start application on device: %s"), output));
 		CLEANUP_AND_RETURN(ERR_CANT_CREATE);
 	}
@@ -1066,38 +1066,10 @@ bool EditorExportPlatformOpenHarmony::has_valid_export_configuration(const Ref<E
 		}
 	}
 
-	String sdk_path = EDITOR_GET("export/openharmony/openharmony_sdk_path");
-	if (sdk_path.is_empty()) {
-		valid = false;
-		err += TTR("OpenHarmony SDK path is not configured in Editor Settings.") + "\n";
-	} else {
-		String hdc_path = get_hdc_path();
-		if (hdc_path.is_empty() || !FileAccess::exists(hdc_path)) {
-			valid = false;
-			err += TTR("HDC command not found in OpenHarmony SDK path.") + "\n";
-		}
-	}
-
-	String tool_path = EDITOR_GET("export/openharmony/openharmony_tool_path");
+	String tool_path = get_tool_path();
 	if (tool_path.is_empty()) {
 		valid = false;
-		err += TTR("OpenHarmony tool path is not configured in Editor Settings.") + "\n";
-	} else {
-		String exe_ext;
-		if (OS::get_singleton()->get_name() == "Windows") {
-			exe_ext = ".exe";
-		}
-		String node_path = tool_path.path_join("node/node" + exe_ext);
-		if (!FileAccess::exists(node_path)) {
-			valid = false;
-			err += TTR("Node.js executable not found in OpenHarmony tool path.") + "\n";
-		}
-
-		String hvigor_path = tool_path.path_join("hvigor/bin/hvigorw.js");
-		if (!FileAccess::exists(hvigor_path)) {
-			valid = false;
-			err += TTR("hvigorw.js executable not found in OpenHarmony tool path.") + "\n";
-		}
+		err += TTR("OpenHarmony tool path not configured. Please set it in the Editor Settings (Export > OpenHarmony > OpenHarmony Tool Path).") + "\n";
 	}
 
 	if (!err.is_empty()) {
@@ -1149,8 +1121,44 @@ bool EditorExportPlatformOpenHarmony::has_valid_project_configuration(const Ref<
 	return valid;
 }
 
+String EditorExportPlatformOpenHarmony::get_tool_path() const {
+	return EDITOR_GET("export/openharmony/openharmony_tool_path");
+}
+
+String EditorExportPlatformOpenHarmony::get_sdk_path() const {
+	String tool_path = get_tool_path();
+	if (tool_path.is_empty()) {
+		return "";
+	}
+	return tool_path.path_join("/sdk");
+}
+
+String EditorExportPlatformOpenHarmony::get_hvigor_path() const {
+	String tool_path = get_tool_path();
+	if (tool_path.is_empty()) {
+		return "";
+	}
+	String exe_ext;
+	if (OS::get_singleton()->get_name() == "Windows") {
+		exe_ext = ".bat";
+	}
+	return tool_path.path_join("/hvigor/bin/hvigorw" + exe_ext);
+}
+
+String EditorExportPlatformOpenHarmony::get_hvigor_path_ide() const {
+	String tool_path = get_tool_path();
+	if (tool_path.is_empty()) {
+		return "";
+	}
+	String exe_ext;
+	if (OS::get_singleton()->get_name() == "Windows") {
+		exe_ext = ".bat";
+	}
+	return tool_path.path_join("/tools/hvigor/bin/hvigorw" + exe_ext);
+}
+
 String EditorExportPlatformOpenHarmony::get_hdc_path() const {
-	String sdk_path = EDITOR_GET("export/openharmony/openharmony_sdk_path");
+	String sdk_path = get_sdk_path();
 	if (sdk_path.is_empty()) {
 		return "";
 	}
@@ -1158,7 +1166,7 @@ String EditorExportPlatformOpenHarmony::get_hdc_path() const {
 	if (OS::get_singleton()->get_name() == "Windows") {
 		exe_ext = ".exe";
 	}
-	return sdk_path.path_join("/toolchains/hdc" + exe_ext);
+	return sdk_path.path_join("/default/openharmony/toolchains/hdc" + exe_ext);
 }
 
 EditorExportPlatformOpenHarmony::EditorExportPlatformOpenHarmony() {

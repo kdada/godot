@@ -54,8 +54,6 @@ def get_flags():
 
 
 def get_default_sdk_path():
-    if os.name == "nt":
-        return "C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/"
     return ""
 
 
@@ -68,6 +66,9 @@ def get_sdk_path(env: "SConsEnvironment"):
 
 def configure(env: "SConsEnvironment"):
     sdk_root = get_sdk_path(env)
+    if (sdk_root == "") or (not os.path.exists(sdk_root)):
+        print_error("OpenHarmony SDK not found. Please set OPENHARMONY_SDK_PATH to the SDK path.")
+        sys.exit(255)
 
     # Validate arch.
     supported_arches = ["arm64", "x86_64"]
@@ -111,7 +112,7 @@ def configure(env: "SConsEnvironment"):
             "-fpascal-strings",
             "-fblocks",
             "-fasm-blocks",
-            "-isysroot='C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/native/sysroot'",
+            f"-isysroot='{sdk_root}/native/sysroot'",
         ]
     )
     env.Append(

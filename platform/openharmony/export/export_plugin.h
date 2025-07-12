@@ -55,6 +55,10 @@ private:
 	Ref<ImageTexture> logo;
 	Ref<ImageTexture> run_icon;
 
+	String get_tool_path() const;
+	String get_sdk_path() const;
+	String get_hvigor_path() const;
+	String get_hvigor_path_ide() const;
 	String get_hdc_path() const;
 
 	Vector<String> devices;

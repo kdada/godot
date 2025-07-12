@@ -37,47 +37,14 @@
 #include "editor/editor_settings.h"
 #include "editor/export/editor_export.h"
 
-String get_default_openharmony_sdk_path();
-String get_default_openharmony_tool_path();
-String get_default_deveco_sdk_home();
-
 void register_openharmony_exporter_types() {
 	GDREGISTER_VIRTUAL_CLASS(EditorExportPlatformOpenHarmony);
 }
 
 void register_openharmony_exporter() {
-	// TODO: Move to editor_settings.cpp
-	EDITOR_DEF_BASIC("export/openharmony/openharmony_sdk_path", get_default_openharmony_sdk_path());
-	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "export/openharmony/openharmony_sdk_path", PROPERTY_HINT_GLOBAL_DIR));
-	EDITOR_DEF_BASIC("export/openharmony/openharmony_tool_path", get_default_openharmony_tool_path());
+	EDITOR_DEF_BASIC("export/openharmony/openharmony_tool_path", "");
 	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "export/openharmony/openharmony_tool_path", PROPERTY_HINT_GLOBAL_DIR));
-	EDITOR_DEF_BASIC("export/openharmony/deveco_sdk_home", get_default_deveco_sdk_home());
-	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "export/openharmony/deveco_sdk_home", PROPERTY_HINT_GLOBAL_DIR));
 
 	Ref<EditorExportPlatformOpenHarmony> exporter = Ref<EditorExportPlatformOpenHarmony>(memnew(EditorExportPlatformOpenHarmony));
 	EditorExport::get_singleton()->add_export_platform(exporter);
-}
-
-inline String get_default_openharmony_sdk_path() {
-#ifdef WINDOWS_ENABLED
-	return "C:/Program Files/Huawei/DevEco Studio/sdk/default/openharmony/";
-#else
-	return String();
-#endif
-}
-
-inline String get_default_openharmony_tool_path() {
-#ifdef WINDOWS_ENABLED
-	return "C:/Program Files/Huawei/DevEco Studio/tools/";
-#else
-	return String();
-#endif
-}
-
-inline String get_default_deveco_sdk_home() {
-#ifdef WINDOWS_ENABLED
-	return "C:/Program Files/Huawei/DevEco Studio/sdk";
-#else
-	return String();
-#endif
 }
