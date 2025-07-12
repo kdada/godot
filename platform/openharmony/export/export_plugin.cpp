@@ -66,6 +66,12 @@ static const char *OPENHARMONY_PERMISSIONS[] = {
 	nullptr
 };
 
+// OpenHarmony user permissions
+static const char *OPENHARMONY_USER_PERMISSIONS[] = {
+	"ohos.permission.MICROPHONE",
+	nullptr
+};
+
 static const char *OPENHARMONY_DEFAULT_SDK_VERSION = "5.0.5(17)";
 static const char *OPENHARMONY_DEFAULT_BUNDLE_ID = "org.godotengine.template";
 static const char *OPENHARMONY_ORIENTATION_ENUMS = "landscape,landscape_inverted,auto_rotation_landscape,auto_rotation_landscape_restricted,portrait,portrait_inverted,auto_rotation_portrait,auto_rotation_portrait_restricted,auto_rotation_unspecified,auto_rotation_restricted,follow_recent,follow_desktop";
@@ -438,12 +444,45 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 	if (app_name.is_empty()) {
 		app_name = "template";
 	}
-	String string_json_path = project_dir.path_join("entry/src/main/resources/base/element/string.json5");
+	String string_json_path = project_dir.path_join("entry/src/main/resources/base/element/string.json");
 	if (FileAccess::exists(string_json_path)) {
 		Ref<FileAccess> string_json_file = FileAccess::open(string_json_path, FileAccess::READ);
 		if (string_json_file.is_valid()) {
 			String content = string_json_file->get_as_text();
-			content = content.replace("label", app_name);
+			String key = "\"EntryAbility_label\"";
+			int pos = content.find(key);
+			if (pos >= 0) {
+				String value = "\"label\"";
+				pos = content.find(value, pos + key.length());
+				if (pos >= 0) {
+					content = content.left(pos) + "\"" + app_name + "\"" + content.right(content.length() - pos - value.length());
+				}
+			}
+
+			key = "\"user_permissions\"";
+			pos = content.find(key);
+			if (pos >= 0) {
+				String value = "\"\"";
+				pos = content.find(value, pos + key.length());
+				if (pos >= 0) {
+					const char **perms = OPENHARMONY_USER_PERMISSIONS;
+					String user_permissions;
+					while (*perms) {
+						String perm_name = String(*perms);
+						String perm_option = vformat("%s/%s", PNAME("permissions"), perm_name);
+						bool perm_enabled = p_preset->get(perm_option);
+						if (perm_enabled) {
+							if (user_permissions != "") {
+								user_permissions += ",";
+							}
+							user_permissions += perm_name;
+						}
+						perms++;
+					}
+					content = content.left(pos) + "\"" + user_permissions + "\"" + content.right(content.length() - pos - value.length());
+				}
+			}
+
 			string_json_file = FileAccess::open(string_json_path, FileAccess::WRITE);
 			if (string_json_file.is_valid()) {
 				string_json_file->store_string(content);

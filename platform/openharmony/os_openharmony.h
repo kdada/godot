@@ -46,6 +46,7 @@ class OS_OpenHarmony : public OS_Unix {
 	AudioDriverOpenHarmony audio_driver;
 	int32_t window_id = -1;
 	bool is_focused = false;
+	HashSet<String> allowed_permissions;
 
 	struct FontInfo {
 		String font_name;
@@ -82,6 +83,11 @@ public:
 
 	void set_display_size(const Size2i &p_size);
 	Size2i get_display_size() const;
+
+	void set_allowed_permissions(const char *p_allowed_permissions);
+
+	virtual bool request_permission(const String &p_name) override;
+	virtual bool request_permissions() override;
 
 	virtual void initialize() override;
 	virtual void initialize_joypads() override;

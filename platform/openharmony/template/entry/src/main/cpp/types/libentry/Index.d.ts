@@ -67,7 +67,7 @@ export const destroySurface: (id: BigInt) => any;
 
 export const sendWindowEvent: (id: number) => any;
 
-export const setup: () => any;
+export const setup: (allowed_permissions: string) => any;
 
 export const inputTouch: (events: SimplifiedTouchEvent[]) => any;
 

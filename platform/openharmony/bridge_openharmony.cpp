@@ -143,7 +143,7 @@ void godot_step(long long timestamp, void *data) {
 	OH_NativeVSync_RequestFrame(native_vsync, godot_step, nullptr);
 }
 
-int64_t godot_init(NativeResourceManager *p_resource_manager, void *p_native_window, int32_t window_id, int64_t window_width, int64_t window_height) {
+int64_t godot_init(NativeResourceManager *p_resource_manager, void *p_native_window, int32_t window_id, int64_t window_width, int64_t window_height, const char *p_allowed_permissions) {
 	OHNativeWindow *window = static_cast<OHNativeWindow *>(p_native_window);
 
 	FileAccessOpenHarmony::setup(p_resource_manager);
@@ -152,6 +152,7 @@ int64_t godot_init(NativeResourceManager *p_resource_manager, void *p_native_win
 	os_openharmony->set_window_id(window_id);
 	os_openharmony->set_native_window(window);
 	os_openharmony->set_display_size(Size2i(window_width, window_height));
+	os_openharmony->set_allowed_permissions(p_allowed_permissions);
 
 	Vector<String> args;
 	String content;

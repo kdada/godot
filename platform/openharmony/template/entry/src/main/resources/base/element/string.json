@@ -13,6 +13,10 @@
       "value": "label"
     },
     {
+      "name": "user_permissions",
+      "value": ""
+    },
+    {
       "name": "INTERNET_reason",
       "value": "For accessing network"
     },

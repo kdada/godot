@@ -31,7 +31,7 @@
 import plugin, { SimplifiedKeyEvent, SimplifiedMouseEvent } from 'libentry.so';
 import { resourceManager } from '@kit.LocalizationKit';
 import { display } from '@kit.ArkUI';
-import { common } from '@kit.AbilityKit';
+import { abilityAccessCtrl, common, Permissions } from '@kit.AbilityKit';
 import { KeyCode } from '@kit.InputKit';
 
 class PluginXComponentController extends XComponentController {
@@ -39,9 +39,9 @@ class PluginXComponentController extends XComponentController {
   resMgr: resourceManager.ResourceManager
   windowId: number
 
-  constructor(context: Context, resourceManager: resourceManager.ResourceManager) {
+  constructor(context: common.UIAbilityContext, resourceManager: resourceManager.ResourceManager) {
     super()
-    this.ctx = context as common.UIAbilityContext
+    this.ctx = context
     this.resMgr = resourceManager
     this.windowId = this.ctx.windowStage.getMainWindowSync()
       .getWindowProperties()
@@ -67,7 +67,8 @@ class PluginXComponentController extends XComponentController {
 @Component
 struct Index {
   resMgr = this.getUIContext().getHostContext()!.resourceManager
-  controller: XComponentController = new PluginXComponentController(getContext(this), this.resMgr)
+  context = getContext(this) as common.UIAbilityContext
+  controller: XComponentController = new PluginXComponentController(this.context, this.resMgr)
 
   convertMouseButton(button: MouseButton) {
     switch (button) {
@@ -113,7 +114,30 @@ struct Index {
               surfaceHeight: screenHeight
             }
             this.controller.setXComponentSurfaceRect(surfaceRect);
-            plugin.setup()
+
+            let user_permissions = this.context.resourceManager.getStringSync($r("app.string.user_permissions"));
+            let user_permissions_list: Array<Permissions> = [];
+            user_permissions.split(",").forEach((value) => {
+              user_permissions_list.push(value.trim() as Permissions)
+            })
+            if (user_permissions_list.length > 0) {
+              let atManager: abilityAccessCtrl.AtManager = abilityAccessCtrl.createAtManager();
+              atManager.requestPermissionsFromUser(this.context, user_permissions_list).then((data) => {
+                let grantStatus: Array<number> = data.authResults;
+                let length: number = grantStatus.length;
+                let allowed_permissions: Array<string> = []
+                for (let i = 0; i < length; i++) {
+                  if (grantStatus[i] === 0) {
+                    allowed_permissions.push(user_permissions_list[i])
+                  }
+                }
+                plugin.setup(allowed_permissions.join(","))
+              }).catch(() => {
+                plugin.setup("")
+              })
+            } else {
+              plugin.setup("")
+            }
           })
         })
         .onTouch((event) => {
@@ -133,7 +157,7 @@ struct Index {
         .onMouse((event) => {
           let button = this.convertMouseButton(event.button)
           let type = this.convertMouseAction(event.action)
-          if (button == 0 && type != 2 ) {
+          if (button == 0 && type != 2) {
             return;
           }
           let ctx = this.getUIContext()
@@ -500,4 +524,3 @@ function mapKeyCode(keyCode: KeyCode): number {
       return 0; // Return 0 for unmapped keys
   }
 }
-

@@ -59,7 +59,7 @@ typedef struct GodotMouseEvent {
 	float y;
 } GodotMouseEvent;
 
-int64_t godot_init(NativeResourceManager *p_resource_manager, void *p_native_window, int32_t window_id, int64_t window_width, int64_t window_height);
+int64_t godot_init(NativeResourceManager *p_resource_manager, void *p_native_window, int32_t window_id, int64_t window_width, int64_t window_height, const char *p_allowed_permissions);
 void godot_touch(GodotTouchEvent *p_event, int count);
 void godot_mouse(GodotMouseEvent *p_event);
 void godot_key(GodotKeyEvent *p_event);

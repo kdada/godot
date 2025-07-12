@@ -91,6 +91,21 @@ Size2i OS_OpenHarmony::get_display_size() const {
 	return display_size;
 }
 
+void OS_OpenHarmony::set_allowed_permissions(const char *p_allowed_permissions) {
+	String permissions = p_allowed_permissions;
+	for (const String &permission : permissions.split(",")) {
+		allowed_permissions.insert(permission);
+	}
+}
+
+bool OS_OpenHarmony::request_permission(const String &p_name) {
+	return allowed_permissions.has(p_name);
+}
+
+bool OS_OpenHarmony::request_permissions() {
+	return false;
+}
+
 void OS_OpenHarmony::initialize() {
 	OS_Unix::initialize_core();
 
