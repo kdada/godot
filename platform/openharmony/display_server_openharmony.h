@@ -71,7 +71,16 @@ public:
 	virtual float screen_get_scale(int p_screen = SCREEN_OF_MAIN_WINDOW) const override;
 	virtual float screen_get_refresh_rate(int p_screen = SCREEN_OF_MAIN_WINDOW) const override;
 	virtual bool is_touchscreen_available() const override;
-	virtual Point2i mouse_get_position() const override;
+
+	virtual Point2i mouse_get_position() const override { return Point2i(); }
+	virtual void mouse_set_mode(MouseMode p_mode) override {}
+	virtual MouseMode mouse_get_mode() const override { return MOUSE_MODE_VISIBLE; }
+	virtual void mouse_set_mode_override(MouseMode p_mode) override {}
+	virtual MouseMode mouse_get_mode_override() const override { return MOUSE_MODE_VISIBLE; }
+	virtual void mouse_set_mode_override_enabled(bool p_override_enabled) override {}
+	virtual bool mouse_is_mode_override_enabled() const override { return false; }
+	virtual void warp_mouse(const Point2i &p_position) override {}
+	virtual BitField<MouseButtonMask> mouse_get_button_state() const override { return 0; }
 
 	virtual void screen_set_orientation(ScreenOrientation p_orientation, int p_screen = SCREEN_OF_MAIN_WINDOW) override;
 	virtual ScreenOrientation screen_get_orientation(int p_screen = SCREEN_OF_MAIN_WINDOW) const override;

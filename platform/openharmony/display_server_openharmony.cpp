@@ -130,6 +130,7 @@ bool DisplayServerOpenHarmony::has_feature(Feature p_feature) const {
 		case FEATURE_TOUCHSCREEN:
 		case FEATURE_CLIPBOARD:
 		case FEATURE_VIRTUAL_KEYBOARD:
+		case FEATURE_IME:
 		case FEATURE_KEEP_SCREEN_ON:
 			return true;
 		default:
@@ -178,10 +179,6 @@ bool DisplayServerOpenHarmony::is_touchscreen_available() const {
 	return true;
 }
 
-Point2i DisplayServerOpenHarmony::mouse_get_position() const {
-	return Point2i();
-}
-
 void DisplayServerOpenHarmony::screen_set_orientation(DisplayServer::ScreenOrientation p_orientation, int p_screen) {
 	// Not supported on OpenHarmony.
 }
@@ -209,7 +206,10 @@ void DisplayServerOpenHarmony::clipboard_set(const String &p_text) {
 	OH_UdmfRecord_AddPlainText(record, plainText);
 	OH_UdmfData *data = OH_UdmfData_Create();
 	OH_UdmfData_AddRecord(data, record);
-	OH_Pasteboard_SetData(pasteboard, data);
+	int status = OH_Pasteboard_SetData(pasteboard, data);
+	if (status != 0) {
+		ERR_PRINT("Failed to set clipboard data with PASTEBOARD_ErrCode: " + itos(status));
+	}
 	OH_UdsPlainText_Destroy(plainText);
 	OH_UdmfRecord_Destroy(record);
 	OH_UdmfData_Destroy(data);
@@ -217,21 +217,25 @@ void DisplayServerOpenHarmony::clipboard_set(const String &p_text) {
 }
 
 String DisplayServerOpenHarmony::clipboard_get() const {
-	const char *content = "";
+	String content = "";
 	OH_Pasteboard *pasteboard = OH_Pasteboard_Create();
 	bool hasPlainTextData = OH_Pasteboard_HasType(pasteboard, "text/plain");
 	if (hasPlainTextData) {
-		int ret = 0;
-		OH_UdmfData *udmfData = OH_Pasteboard_GetData(pasteboard, &ret);
-		OH_UdmfRecord *record = OH_UdmfData_GetRecord(udmfData, 0);
-		OH_UdsPlainText *plainText = OH_UdsPlainText_Create();
-		OH_UdmfRecord_GetPlainText(record, plainText);
-		content = OH_UdsPlainText_GetContent(plainText);
-		OH_UdsPlainText_Destroy(plainText);
+		int status = 0;
+		OH_UdmfData *udmfData = OH_Pasteboard_GetData(pasteboard, &status);
+		if (status == 0) {
+			OH_UdmfRecord *record = OH_UdmfData_GetRecord(udmfData, 0);
+			OH_UdsPlainText *plainText = OH_UdsPlainText_Create();
+			OH_UdmfRecord_GetPlainText(record, plainText);
+			content.parse_utf8(OH_UdsPlainText_GetContent(plainText));
+			OH_UdsPlainText_Destroy(plainText);
+		} else {
+			ERR_PRINT("Failed to get clipboard data with PASTEBOARD_ErrCode: " + itos(status));
+		}
 		OH_UdmfData_Destroy(udmfData);
 	}
 	OH_Pasteboard_Destroy(pasteboard);
-	return String(content);
+	return content;
 }
 
 void DisplayServerOpenHarmony::screen_set_keep_on(bool p_enable) {
@@ -465,7 +469,10 @@ void DisplayServerOpenHarmony::window_set_ime_active(const bool p_active, Displa
 }
 
 void DisplayServerOpenHarmony::window_set_ime_position(const Point2i &p_pos, DisplayServer::WindowID p_window) {
-	// Not supported on OpenHarmony.
+	if (ime_active) {
+		InputMethod_CursorInfo *info = OH_CursorInfo_Create(p_pos.x, p_pos.y, 0, 30);
+		OH_InputMethodProxy_NotifyCursorUpdate(input_method_proxy, info);
+	}
 }
 
 Vector<DisplayServer::WindowID> DisplayServerOpenHarmony::get_window_list() const {
