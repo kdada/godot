@@ -11,7 +11,7 @@ Import("env")
 
 def generate_bundle(target, source, env):
     dst_lib_path = (
-        Dir(f"#platform/openharmony/template/entry/src/main/cpp/libs/{lib_arch_dir}/").abspath + "/libgodot.so"
+        Dir(f"#platform/openharmony/template/entry/libs/{lib_arch_dir}/").abspath + "/libgodot.so"
     )
     os.makedirs(os.path.dirname(dst_lib_path), exist_ok=True)
     shutil.copy(File(lib_name).abspath, dst_lib_path)

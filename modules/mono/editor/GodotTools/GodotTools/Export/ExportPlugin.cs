@@ -152,7 +152,7 @@ namespace GodotTools.Export
             if (!TryDeterminePlatformFromOSName(osName, out string? platform))
                 throw new NotSupportedException("Target platform not supported.");
 
-            if (!new[] { OS.Platforms.Windows, OS.Platforms.LinuxBSD, OS.Platforms.MacOS, OS.Platforms.Android, OS.Platforms.iOS }
+            if (!new[] { OS.Platforms.Windows, OS.Platforms.LinuxBSD, OS.Platforms.MacOS, OS.Platforms.Android, OS.Platforms.iOS, OS.Platforms.OpenHarmony }
                     .Contains(platform))
             {
                 throw new NotImplementedException("Target platform not yet implemented.");
@@ -228,6 +228,10 @@ namespace GodotTools.Export
                 {
                     string ridArch = DetermineRuntimeIdentifierArch(arch);
                     string runtimeIdentifier = $"{ridOS}-{ridArch}";
+                    if (platform == OS.Platforms.OpenHarmony)
+                    {
+                        runtimeIdentifier = $"linux-musl-{ridArch}";
+                    }
                     string projectDataDirName = $"data_{GodotSharpDirs.CSharpProjectName}_{platform}_{arch}";
                     if (platform == OS.Platforms.MacOS)
                     {

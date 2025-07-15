@@ -79,7 +79,7 @@ static const char *OPENHARMONY_ORIENTATION_ENUMS = "landscape,landscape_inverted
 void EditorExportPlatformOpenHarmony::get_preset_features(const Ref<EditorExportPreset> &p_preset, List<String> *r_features) const {
 	r_features->push_back("etc2");
 	r_features->push_back("astc");
-	if (p_preset->get("architectures/arm64-v8a")) {
+	if (p_preset->get("architectures/arm64")) {
 		r_features->push_back("arm64");
 	} else if (p_preset->get("architectures/x86_64")) {
 		r_features->push_back("x86_64");
@@ -665,10 +665,23 @@ Error EditorExportPlatformOpenHarmony::export_project_helper(const Ref<EditorExp
 	}
 
 	String pck_path = project_dir.path_join("/entry/src/main/resources/rawfile/template.pck");
-	err = save_pack(p_preset, p_debug, pck_path);
+	Vector<SharedObject> so_files;
+	err = save_pack(p_preset, p_debug, pck_path, &so_files);
 	if (err != OK) {
 		add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), TTR("Could not write package file."));
 		return err;
+	}
+
+	if (!so_files.is_empty()) {
+		if (ep.step(TTR("Copying shared libraries..."), 4)) {
+			return ERR_SKIP;
+		}
+
+		err = _copy_so_files_to_libs(project_dir, so_files, p_preset);
+		if (err != OK) {
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), TTR("Could not copy shared libraries."));
+			return err;
+		}
 	}
 
 	print_line(vformat("Project exported pck successfully. %s", pck_path));
@@ -1271,6 +1284,43 @@ void EditorExportPlatformOpenHarmony::_notification(int p_what) {
 			}
 		} break;
 	}
+}
+
+Error EditorExportPlatformOpenHarmony::_copy_so_files_to_libs(const String &p_project_dir, const Vector<SharedObject> &p_so_files, const Ref<EditorExportPreset> &p_preset) {
+	String arch_dir = "x86_64";
+	bool arm64_enabled = p_preset->get("architectures/arm64");
+	if (arm64_enabled) {
+		arch_dir = "arm64-v8a";
+	}
+
+	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+	if (da.is_null()) {
+		return ERR_CANT_CREATE;
+	}
+
+	for (const SharedObject &so : p_so_files) {
+		String libs_dir = p_project_dir.path_join("entry/libs").path_join(arch_dir);
+		if (!so.target.is_empty()) {
+			libs_dir = libs_dir.path_join(so.target);
+		}
+		String dst_path = libs_dir.path_join(so.path.get_file());
+
+		Error dir_err = da->make_dir_recursive(libs_dir);
+		if (dir_err != OK && dir_err != ERR_ALREADY_EXISTS) {
+			add_message(EXPORT_MESSAGE_ERROR, "Export", vformat("Could not create directory: \"%s\".", libs_dir));
+			return dir_err;
+		}
+
+		Error copy_err = da->copy(so.path, dst_path);
+		if (copy_err != OK) {
+			add_message(EXPORT_MESSAGE_ERROR, "Export", vformat("Could not copy shared library from \"%s\" to \"%s\".", so.path, dst_path));
+			return copy_err;
+		}
+
+		print_verbose(vformat("Copied shared library: %s -> %s", so.path, dst_path));
+	}
+
+	return OK;
 }
 
 EditorExportPlatformOpenHarmony::~EditorExportPlatformOpenHarmony() {

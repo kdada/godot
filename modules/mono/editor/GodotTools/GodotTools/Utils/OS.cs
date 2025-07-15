@@ -29,6 +29,7 @@ namespace GodotTools.Utils
             public const string Android = "Android";
             public const string iOS = "iOS";
             public const string Web = "Web";
+            public const string OpenHarmony = "OpenHarmony";
         }
 
         /// <summary>
@@ -42,6 +43,7 @@ namespace GodotTools.Utils
             public const string Android = "android";
             public const string iOS = "ios";
             public const string Web = "web";
+            public const string OpenHarmony = "openharmony";
         }
 
         /// <summary>
@@ -58,6 +60,7 @@ namespace GodotTools.Utils
             public const string iOS = "ios";
             public const string iOSSimulator = "iossimulator";
             public const string Browser = "browser";
+            public const string OpenHarmony = "openharmony";
         }
 
         public static readonly Dictionary<string, string> PlatformFeatureMap = new Dictionary<string, string>(
@@ -70,7 +73,8 @@ namespace GodotTools.Utils
             ["Linux"] = Platforms.LinuxBSD,
             ["Android"] = Platforms.Android,
             ["iOS"] = Platforms.iOS,
-            ["Web"] = Platforms.Web
+            ["Web"] = Platforms.Web,
+            ["OpenHarmony"] = Platforms.OpenHarmony
         };
 
         public static readonly Dictionary<string, string> PlatformNameMap = new Dictionary<string, string>
@@ -83,7 +87,8 @@ namespace GodotTools.Utils
             [Names.BSD] = Platforms.LinuxBSD,
             [Names.Android] = Platforms.Android,
             [Names.iOS] = Platforms.iOS,
-            [Names.Web] = Platforms.Web
+            [Names.Web] = Platforms.Web,
+            [Names.OpenHarmony] = Platforms.OpenHarmony
         };
 
         public static readonly Dictionary<string, string> DotNetOSPlatformMap = new Dictionary<string, string>
@@ -97,7 +102,8 @@ namespace GodotTools.Utils
             [Platforms.LinuxBSD] = DotNetOS.Linux,
             [Platforms.Android] = DotNetOS.Android,
             [Platforms.iOS] = DotNetOS.iOS,
-            [Platforms.Web] = DotNetOS.Browser
+            [Platforms.Web] = DotNetOS.Browser,
+            [Platforms.OpenHarmony] = DotNetOS.OpenHarmony
         };
 
         private static bool IsOS(string name)
@@ -124,7 +130,7 @@ namespace GodotTools.Utils
             new[] { Names.Linux, Names.FreeBSD, Names.NetBSD, Names.BSD };
 
         private static readonly IEnumerable<string> UnixLikePlatforms =
-            new[] { Names.MacOS, Names.Android, Names.iOS }
+            new[] { Names.MacOS, Names.Android, Names.iOS, Names.OpenHarmony }
                 .Concat(LinuxBSDPlatforms).ToArray();
 
         private static readonly Lazy<bool> _isWindows = new(() => IsOS(Names.Windows));
@@ -133,6 +139,7 @@ namespace GodotTools.Utils
         private static readonly Lazy<bool> _isAndroid = new(() => IsOS(Names.Android));
         private static readonly Lazy<bool> _isiOS = new(() => IsOS(Names.iOS));
         private static readonly Lazy<bool> _isWeb = new(() => IsOS(Names.Web));
+        private static readonly Lazy<bool> _isOpenHarmony = new(() => IsOS(Names.OpenHarmony));
         private static readonly Lazy<bool> _isUnixLike = new(() => IsAnyOS(UnixLikePlatforms));
 
         [SupportedOSPlatformGuard("windows")] public static bool IsWindows => _isWindows.Value;
@@ -146,6 +153,9 @@ namespace GodotTools.Utils
         [SupportedOSPlatformGuard("ios")] public static bool IsiOS => _isiOS.Value;
 
         [SupportedOSPlatformGuard("browser")] public static bool IsWeb => _isWeb.Value;
+
+        [SupportedOSPlatformGuard("openharmony")] public static bool IsOpenHarmony => _isOpenHarmony.Value;
+
         public static bool IsUnixLike => _isUnixLike.Value;
 
         public static char PathSep => IsWindows ? ';' : ':';

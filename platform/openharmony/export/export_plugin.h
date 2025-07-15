@@ -70,6 +70,7 @@ private:
 	static void _check_for_changes_poll_thread(void *ud);
 	void _update_preset_status();
 	void _remove_dir_recursive(const String &p_dir);
+	Error _copy_so_files_to_libs(const String &p_project_dir, const Vector<SharedObject> &p_so_files, const Ref<EditorExportPreset> &p_preset);
 
 protected:
 	void _notification(int p_what);

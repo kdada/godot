@@ -13,10 +13,5 @@ include_directories(${NATIVERENDER_ROOT_PATH}
 
 add_library(entry SHARED napi_init.cpp)
 
-add_library(godot SHARED IMPORTED)
-set_target_properties(godot
-	PROPERTIES
-	IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/${OHOS_ARCH}/libgodot.so
-)
-
-target_link_libraries(entry PUBLIC libhilog_ndk.z.so libace_ndk.z.so libnative_window.so libace_napi.z.so librawfile.z.so libnative_vsync.so libohaudio.so libohinputmethod.so libnative_display_manager.so libnative_window_manager.so libnative_drawing.so libudmf.so libpasteboard.so godot)
+target_link_libraries(entry PUBLIC libhilog_ndk.z.so libace_ndk.z.so libnative_window.so libace_napi.z.so librawfile.z.so libnative_vsync.so libohaudio.so libohinputmethod.so libnative_display_manager.so libnative_window_manager.so libnative_drawing.so libudmf.so libpasteboard.so)
+target_link_libraries(entry PUBLIC ${NATIVERENDER_ROOT_PATH}/../../../libs/${OHOS_ARCH}/libgodot.so)
