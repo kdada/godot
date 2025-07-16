@@ -1300,9 +1300,6 @@ Error EditorExportPlatformOpenHarmony::_copy_so_files_to_libs(const String &p_pr
 
 	for (const SharedObject &so : p_so_files) {
 		String libs_dir = p_project_dir.path_join("entry/libs").path_join(arch_dir);
-		if (!so.target.is_empty()) {
-			libs_dir = libs_dir.path_join(so.target);
-		}
 		String dst_path = libs_dir.path_join(so.path.get_file());
 
 		Error dir_err = da->make_dir_recursive(libs_dir);
