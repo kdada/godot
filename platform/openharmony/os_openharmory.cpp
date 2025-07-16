@@ -49,7 +49,12 @@
 #define LOG_DOMAIN 0x3200
 #define LOG_TAG "LIB_GODOT"
 
-const char *OS_OpenHarmony::EXEC_PATH = "template";
+#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) || defined(_M_X64)
+const char *OS_OpenHarmony::EXEC_PATH = "/data/storage/el1/bundle/libs/x86_64/template";
+#else
+const char *OS_OpenHarmony::EXEC_PATH = "/data/storage/el1/bundle/libs/arm64/template";
+#endif
+
 const char *OS_OpenHarmony::BUNDLE_RESOURCE_DIR = "/data/storage/el1/bundle/resources/rawfile/";
 const char *OS_OpenHarmony::USER_DATA_DIR = "/data/storage/el2/base/files/";
 
@@ -65,6 +70,10 @@ OS_OpenHarmony::OS_OpenHarmony() {
 
 	AudioDriverManager::add_driver(&audio_driver);
 	DisplayServerOpenHarmony::register_openharmony_driver();
+}
+
+String OS_OpenHarmony::get_name() const {
+	return "OpenHarmony";
 }
 
 void OS_OpenHarmony::set_native_window(OHNativeWindow *p_native_window) {

@@ -74,6 +74,7 @@ public:
 	static OS_OpenHarmony *get_singleton();
 
 	OS_OpenHarmony();
+	virtual String get_name() const override;
 
 	void set_native_window(OHNativeWindow *p_native_window);
 	OHNativeWindow *get_native_window() const;

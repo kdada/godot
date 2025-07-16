@@ -103,6 +103,7 @@ static const char *platform_name_map[][2] = {
 	{ "Android", "android" },
 	{ "iOS", "ios" },
 	{ "Web", "web" },
+	{ "OpenHarmony", "openharmony" },
 	{ nullptr, nullptr }
 };
 

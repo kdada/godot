@@ -50,6 +50,7 @@ def get_flags():
         "target": "template_debug",
         "builtin_pcre2_with_jit": False,
         "opengl3": False,
+        "supported": ["mono"],
     }
 
 
