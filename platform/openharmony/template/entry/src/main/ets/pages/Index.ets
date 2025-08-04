@@ -66,8 +66,8 @@ class PluginXComponentController extends XComponentController {
 @Entry
 @Component
 struct Index {
-  resMgr = this.getUIContext().getHostContext()!.resourceManager
-  context = getContext(this) as common.UIAbilityContext
+  context = this.getUIContext().getHostContext() as common.UIAbilityContext
+  resMgr = this.context.resourceManager
   controller: XComponentController = new PluginXComponentController(this.context, this.resMgr)
 
   convertMouseButton(button: MouseButton) {
