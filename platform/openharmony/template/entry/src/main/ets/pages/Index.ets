@@ -71,6 +71,16 @@ struct Index {
 	mainWindow: window.Window = this.context.windowStage.getMainWindowSync()
 	controller: XComponentController = new PluginXComponentController(this.context, this.resMgr)
 
+	aboutToAppear() {
+		this.mainWindow.on('windowSizeChange', (size: Size) => {
+			this.setXComponentSurfaceRect(size)
+		})
+	}
+
+	aboutToDisappear() {
+		this.mainWindow.off('windowSizeChange')
+	}
+
 	convertMouseButton(button: MouseButton) {
 		switch (button) {
 			case MouseButton.Left:
@@ -97,6 +107,15 @@ struct Index {
 		return 2;
 	}
 
+	setXComponentSurfaceRect(size: Size) {
+		this.controller.setXComponentSurfaceRect({
+			offsetX: 0,
+			offsetY: 0,
+			surfaceWidth: size.width,
+			surfaceHeight: size.height
+		});
+	}
+
 	build() {
 		Row() {
 			XComponent({
@@ -106,15 +125,7 @@ struct Index {
 			})
 				.onLoad(() => {
 					const rect = this.mainWindow.getWindowProperties().windowRect
-					let screenWidth: number = rect.width
-					let screenHeight: number = rect.height
-					let surfaceRect: SurfaceRect = {
-						offsetX: 0,
-						offsetY: 0,
-						surfaceWidth: screenWidth,
-						surfaceHeight: screenHeight
-					}
-					this.controller.setXComponentSurfaceRect(surfaceRect);
+					this.setXComponentSurfaceRect(rect)
 
 					let user_permissions =
 						this.context.resourceManager.getStringSync($r("app.string.user_permissions"));
