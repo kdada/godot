@@ -200,6 +200,9 @@ int64_t godot_init(NativeResourceManager *p_resource_manager, void *p_native_win
 }
 
 void godot_touch(GodotTouchEvent *p_event, int count) {
+	if (step <= STEP_SETUP) {
+		return;
+	}
 	static Vector<GodotTouchEvent> last_touch_events;
 	for (int i = 0; i < count; i++) {
 		GodotTouchEvent &event = p_event[i];
@@ -246,6 +249,9 @@ void godot_touch(GodotTouchEvent *p_event, int count) {
 }
 
 void godot_mouse(GodotMouseEvent *p_event) {
+	if (step <= STEP_SETUP) {
+		return;
+	}
 	static GodotMouseEvent last_mouse_event;
 	GodotMouseEvent &event = *p_event;
 	switch (event.type) {
@@ -282,6 +288,9 @@ void godot_mouse(GodotMouseEvent *p_event) {
 }
 
 void godot_key(GodotKeyEvent *p_event) {
+	if (step <= STEP_SETUP) {
+		return;
+	}
 	GodotKeyEvent &event = *p_event;
 	Ref<InputEventKey> ev;
 	ev.instantiate();
