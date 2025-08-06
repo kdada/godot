@@ -30,7 +30,7 @@
 
 import plugin, { SimplifiedKeyEvent, SimplifiedMouseEvent } from 'libentry.so';
 import { resourceManager } from '@kit.LocalizationKit';
-import { display } from '@kit.ArkUI';
+import { window } from '@kit.ArkUI';
 import { abilityAccessCtrl, common, Permissions } from '@kit.AbilityKit';
 import { KeyCode } from '@kit.InputKit';
 
@@ -66,9 +66,20 @@ class PluginXComponentController extends XComponentController {
 @Entry
 @Component
 struct Index {
-  resMgr = this.getUIContext().getHostContext()!.resourceManager
-  context = getContext(this) as common.UIAbilityContext
+  context = this.getUIContext().getHostContext() as common.UIAbilityContext
+  resMgr = this.context.resourceManager
+  mainWindow: window.Window = this.context.windowStage.getMainWindowSync()
   controller: XComponentController = new PluginXComponentController(this.context, this.resMgr)
+
+  aboutToAppear() {
+    this.mainWindow.on('windowSizeChange', (size: Size) => {
+      this.setXComponentSurfaceRect(size)
+    })
+  }
+
+  aboutToDisappear() {
+    this.mainWindow.off('windowSizeChange')
+  }
 
   convertMouseButton(button: MouseButton) {
     switch (button) {
@@ -96,6 +107,15 @@ struct Index {
     return 2;
   }
 
+  setXComponentSurfaceRect(size: Size) {
+    this.controller.setXComponentSurfaceRect({
+      offsetX: 0,
+      offsetY: 0,
+      surfaceWidth: size.width,
+      surfaceHeight: size.height
+    });
+  }
+
   build() {
     Row() {
       XComponent({
@@ -104,41 +124,33 @@ struct Index {
         controller: this.controller,
       })
         .onLoad(() => {
-          display.getAllDisplays((err, data: Array<display.Display>) => {
-            let screenWidth: number = data[0].width
-            let screenHeight: number = data[0].height
-            let surfaceRect: SurfaceRect = {
-              offsetX: 0,
-              offsetY: 0,
-              surfaceWidth: screenWidth,
-              surfaceHeight: screenHeight
-            }
-            this.controller.setXComponentSurfaceRect(surfaceRect);
+          const rect = this.mainWindow.getWindowProperties().windowRect
+          this.setXComponentSurfaceRect(rect)
 
-            let user_permissions = this.context.resourceManager.getStringSync($r("app.string.user_permissions"));
-            let user_permissions_list: Array<Permissions> = [];
-            user_permissions.split(",").forEach((value) => {
-              user_permissions_list.push(value.trim() as Permissions)
-            })
-            if (user_permissions_list.length > 0) {
-              let atManager: abilityAccessCtrl.AtManager = abilityAccessCtrl.createAtManager();
-              atManager.requestPermissionsFromUser(this.context, user_permissions_list).then((data) => {
-                let grantStatus: Array<number> = data.authResults;
-                let length: number = grantStatus.length;
-                let allowed_permissions: Array<string> = []
-                for (let i = 0; i < length; i++) {
-                  if (grantStatus[i] === 0) {
-                    allowed_permissions.push(user_permissions_list[i])
-                  }
-                }
-                plugin.setup(allowed_permissions.join(","))
-              }).catch(() => {
-                plugin.setup("")
-              })
-            } else {
-              plugin.setup("")
-            }
+          let user_permissions =
+            this.context.resourceManager.getStringSync($r("app.string.user_permissions"));
+          let user_permissions_list: Array<Permissions> = [];
+          user_permissions.split(",").forEach((value) => {
+            user_permissions_list.push(value.trim() as Permissions)
           })
+          if (user_permissions_list.length > 0) {
+            let atManager: abilityAccessCtrl.AtManager = abilityAccessCtrl.createAtManager();
+            atManager.requestPermissionsFromUser(this.context, user_permissions_list).then((data) => {
+              let grantStatus: Array<number> = data.authResults;
+              let length: number = grantStatus.length;
+              let allowed_permissions: Array<string> = []
+              for (let i = 0; i < length; i++) {
+                if (grantStatus[i] === 0) {
+                  allowed_permissions.push(user_permissions_list[i])
+                }
+              }
+              plugin.setup(allowed_permissions.join(","))
+            }).catch(() => {
+              plugin.setup("")
+            })
+          } else {
+            plugin.setup("")
+          }
         })
         .onTouch((event) => {
           let events: plugin.SimplifiedTouchEvent[] = [];
