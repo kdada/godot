@@ -1,0 +1,71 @@
+name: 🫟️ OpenHarmony Builds
+on:
+  workflow_call:
+
+# Global Settings
+env:
+  SCONS_FLAGS: >-
+    dev_mode=yes
+    module_text_server_fb_enabled=yes
+    tests=no
+    generate_bundle=yes
+    OPENHARMONY_SDK_PATH="$HOME/OpenHarmony/command-line-tools/sdk/default/openharmony/"
+
+
+jobs:
+  build-openharmony:
+    runs-on: ubuntu-24.04
+    name: ${{ matrix.name }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Template arm64 (target=template_release, arch=arm64)
+            cache-name: openharmony-template-arm64
+            target: template_release
+            scons-flags: arch=arm64
+
+          - name: Template arm64, debug (target=template_debug, arch=arm64)
+            cache-name: openharmony-template-debug-arm64
+            target: template_debug
+            scons-flags: arch=arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Restore Godot build cache
+        uses: ./.github/actions/godot-cache-restore
+        with:
+          cache-name: ${{ matrix.cache-name }}
+        continue-on-error: true
+
+      - name: Setup Python and SCons
+        uses: ./.github/actions/godot-deps
+
+      - name: Setup OpenHarmony NDK
+        run: sh misc/scripts/install_ndk_openharmony.sh
+
+      - name: Compilation
+        uses: ./.github/actions/godot-build
+        with:
+          scons-flags: ${{ env.SCONS_FLAGS }} ${{ matrix.scons-flags }}
+          platform: openharmony
+          target: ${{ matrix.target }}
+
+      - name: Remove redundant so files
+        run: rm ${{ github.workspace }}/bin/*.so
+
+      - name: Save Godot build cache
+        uses: ./.github/actions/godot-cache-save
+        with:
+          cache-name: ${{ matrix.cache-name }}
+        continue-on-error: true
+
+      - name: Upload artifact
+        uses: ./.github/actions/upload-artifact
+        with:
+          name: ${{ matrix.cache-name }}
